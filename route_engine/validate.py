@@ -48,8 +48,8 @@ calibration whatsoever - no metres-per-pixel, no homography, no horizon
 estimate. Nobody can attack the result by attacking our geometry.
 
 Usage:
-    python -m triffie.validate
-    python -m triffie.validate --horizon 1200 --split 0.6
+    python -m route_engine.validate
+    python -m route_engine.validate --horizon 1200 --split 0.6
 """
 from __future__ import annotations
 
@@ -351,7 +351,7 @@ def run(horizon_s: float = 1200.0, split: float = 0.6, tol_s: float = 150.0,
     series = load_series(src)
     if not series:
         print("No collected data. Start the collector first:")
-        print("    python -m triffie.collector --cameras 30 --interval 300")
+        print("    python -m route_engine.collector --cameras 30 --interval 300")
         return {}
 
     series, crop = _crop_to_longest_run(series, full_span=full_span)

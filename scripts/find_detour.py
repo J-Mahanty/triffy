@@ -30,8 +30,8 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from triffie.live_engine import LiveEngine
-from triffie.router import Router
+from route_engine.live_engine import LiveEngine
+from route_engine.router import Router
 
 PLACES = [
     "King's Cross", "Tower Bridge", "Paddington", "Liverpool Street", "Victoria",

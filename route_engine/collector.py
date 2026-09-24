@@ -12,8 +12,8 @@ or a Ctrl-C costs you one cycle rather than the whole dataset. Restarting simply
 continues the same file.
 
 Usage:
-    python -m triffie.collector --cameras 24 --interval 300
-    python -m triffie.collector --status
+    python -m route_engine.collector --cameras 24 --interval 300
+    python -m route_engine.collector --status
 """
 from __future__ import annotations
 
@@ -74,7 +74,7 @@ def _collect_camera(reader: LiveCameraReader, cam, fh, verbose: bool) -> int:
 def status() -> None:
     """Summarise what has been collected so far."""
     if not OBS_PATH.exists():
-        print("No data yet. Start with:  python -m triffie.collector")
+        print("No data yet. Start with:  python -m route_engine.collector")
         return
     rows = []
     with OBS_PATH.open(encoding="utf-8") as fh:
@@ -119,7 +119,7 @@ def status() -> None:
         print("  Keep collecting: validation wants at least %.0f hours "
               "(have %.1f)." % (hours_needed, span_h))
     else:
-        print("  Enough for validation. Run:  python -m triffie.validate")
+        print("  Enough for validation. Run:  python -m route_engine.validate")
     print("=" * 62)
 
 
@@ -219,7 +219,7 @@ def _run_cycles(args, reader, cams) -> None:
             slept += 2.0
 
     print("Collected %d observations over %d cycles." % (total, cycle))
-    print("Check progress any time:  python -m triffie.collector --status")
+    print("Check progress any time:  python -m route_engine.collector --status")
 
 
 def main() -> None:

@@ -391,14 +391,14 @@ def api_validation():
     path = DATA / "validation.json"
     if not path.exists():
         return JSONResponse(
-            {"detail": "Run the collector, then: python -m triffie.validate"},
+            {"detail": "Run the collector, then: python -m route_engine.validate"},
             status_code=404)
     blob = json.loads(path.read_text(encoding="utf-8"))
     if not blob.get("from_collector"):
         return JSONResponse(
             {"detail": "Stored validation did not come from the collector log "
                        "and will not be shown as real. Re-run: "
-                       "python -m triffie.validate",
+                       "python -m route_engine.validate",
              "source": blob.get("source", "unknown")},
             status_code=409)
     return blob
@@ -408,7 +408,7 @@ def api_validation():
 def api_benchmark():
     path = DATA / "benchmark.json"
     if not path.exists():
-        return JSONResponse({"detail": "Run: python -m triffie.benchmark"},
+        return JSONResponse({"detail": "Run: python -m route_engine.benchmark"},
                             status_code=404)
     return json.loads(path.read_text(encoding="utf-8"))
 

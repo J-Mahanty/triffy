@@ -6,7 +6,7 @@ inflated ETAs from phantom traffic signals, a router that quietly ignores its
 forecast, personalisation that does nothing, and a benchmark that flatters
 itself. Each one guards a specific bug that was real.
 
-Run:  python -m pytest tests -q      (or: python tests/test_triffie.py)
+Run:  python -m pytest tests -q      (or: python tests/test_route_engine.py)
 """
 from __future__ import annotations
 
@@ -19,10 +19,10 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from triffie.engine import TriffieEngine
-from triffie.network import load_network
-from triffie.router import Router
-from triffie.simulator import TrafficSim, diurnal, parse_clock
+from route_engine.engine import TriffieEngine
+from route_engine.network import load_network
+from route_engine.router import Router
+from route_engine.simulator import TrafficSim, diurnal, parse_clock
 
 
 @pytest.fixture(scope="module")
@@ -193,7 +193,7 @@ def test_router_prefers_driving_through_only_when_it_is_right(eng):
     a full detour and check the router's choice really is the cheaper one.
     """
     import numpy as np
-    from triffie.router import Router
+    from route_engine.router import Router
 
     o, d = eng.resolve("Alipore"), eng.resolve("Esplanade")
     plan = eng.plan("Alipore", "Esplanade", user_id="student", with_baseline=False)
@@ -301,7 +301,7 @@ def test_leave_by_respects_the_deadline(eng):
 # ---------------------------------------------------------------------------
 
 def test_chat_handles_core_intents(eng):
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
     brain = ChatBrain(eng)
     out = brain.handle("Park Circus to BBD Bagh", "t1")
     assert "min" in out and "Directions" in out
@@ -336,7 +336,7 @@ def _online() -> bool:
 @pytest.mark.skipif(not _online(), reason="needs internet for live cameras")
 def test_live_camera_registry_is_reachable():
     """The real-data half of the demo must actually be reachable."""
-    from triffie.livecams import fetch_registry, pick_cameras
+    from route_engine.livecams import fetch_registry, pick_cameras
     cams = fetch_registry()
     assert len(cams) > 100, "expected hundreds of public cameras"
     assert all(c.image_url.startswith("http") for c in cams[:20])
@@ -351,7 +351,7 @@ def test_live_camera_registry_is_reachable():
 
 def test_validation_degrades_gracefully_without_data(tmp_path):
     """A missing dataset must produce guidance, not a traceback, mid-demo."""
-    from triffie import validate
+    from route_engine import validate
     out = validate.run(verbose=False, write=False,
                        series_path=tmp_path / "nothing.jsonl")
     assert out == {}
@@ -370,7 +370,7 @@ def test_validation_exploits_a_recoverable_trend(tmp_path):
     import random
     import time
 
-    from triffie import validate
+    from route_engine import validate
 
     random.seed(3)
     now = time.time() - 12 * 3600
@@ -415,9 +415,9 @@ def test_synthetic_validation_cannot_publish(tmp_path):
     import json
     import time
 
-    from triffie import validate
-    from triffie.collector import OBS_PATH
-    from triffie.config import DATA
+    from route_engine import validate
+    from route_engine.collector import OBS_PATH
+    from route_engine.config import DATA
 
     published = DATA / "validation.json"
     before = published.read_text(encoding="utf-8") if published.exists() else None
@@ -456,7 +456,7 @@ def test_empty_road_is_not_read_as_a_jam():
     jam at night or in rain also detects as nothing. The required behaviour is
     abstention, so the nowcaster falls back to its prior.
     """
-    from triffie.live_engine import CameraBaselines, observation_to_congestion
+    from route_engine.live_engine import CameraBaselines, observation_to_congestion
 
     class _NoHistory(CameraBaselines):
         def __init__(self):
@@ -484,10 +484,10 @@ def test_empty_road_is_not_read_as_a_jam():
 def test_live_engine_publishes_no_phantom_jams():
     """End-to-end: no observation may claim heavy congestion off an empty frame."""
     pytest.importorskip("torch")
-    from triffie.config import graph_path
+    from route_engine.config import graph_path
     if not graph_path("lon").exists():
         pytest.skip("London graph not imported")
-    from triffie.live_engine import LiveEngine
+    from route_engine.live_engine import LiveEngine
 
     eng = LiveEngine(city="lon")
     bad = [o for o in eng.observations if o.vehicle_count == 0 and o.occupancy > 0.5]
@@ -507,10 +507,10 @@ def test_live_routes_report_and_have_real_camera_coverage():
     overstating its evidence.
     """
     pytest.importorskip("torch")
-    from triffie.config import graph_path
+    from route_engine.config import graph_path
     if not graph_path("lon").exists():
         pytest.skip("London graph not imported")
-    from triffie.live_engine import LiveEngine
+    from route_engine.live_engine import LiveEngine
 
     eng = LiveEngine(city="lon")
     if len(eng.observations) < 10:
@@ -540,7 +540,7 @@ def test_validation_forecast_matches_the_production_equation():
     would be worse than no validation at all.
     """
     import math
-    from triffie.validate import HistoricalProfile, triffie_forecast
+    from route_engine.validate import HistoricalProfile, triffie_forecast
 
     rows = [("camA", 1000.0 + i * 300, 10.0, 0.5) for i in range(20)]
     hist = HistoricalProfile(rows)
@@ -569,8 +569,8 @@ def test_osm_download_splits_oversized_tiles_instead_of_skipping(monkeypatch):
     """The first London import silently skipped tiles the OSM API refused as
     too big (HTTP 400), which deleted Westminster, Soho and the City from the
     map. Oversized tiles must be split and every part of the bbox fetched."""
-    from triffie import osm_import
-    from triffie.config import CityBox
+    from route_engine import osm_import
+    from route_engine.config import CityBox
 
     fetched = []
 
@@ -606,7 +606,7 @@ def test_dashboard_camera_wall_stays_off_the_gpu_and_annotates_once(monkeypatch,
     /image + /info requests for one camera must run detection only once."""
     import threading
     import time as _time
-    from triffie import livecams, liveservice
+    from route_engine import livecams, liveservice
 
     if not os.environ.get("TRIFFIE_DASH_DEVICE"):
         assert livecams.DASH_DEVICE == "cpu"
@@ -641,7 +641,7 @@ def test_dashboard_camera_wall_stays_off_the_gpu_and_annotates_once(monkeypatch,
 def test_any_map_camera_can_serve_footage_not_just_the_wall(monkeypatch):
     """Clicking a London map camera asks for its frame, but the service only
     knew the six wall cameras, so every other camera answered 503."""
-    from triffie import liveservice
+    from route_engine import liveservice
 
     class Cam:
         def __init__(self, i):
@@ -661,7 +661,7 @@ def test_clip_stream_loops_when_done_and_never_outruns_the_clip():
     cached frames at the clip's own rate (never burst), and a failed job must
     end the stream rather than hang the connection."""
     import time as _time
-    from triffie.clipviewer import ClipJob, ClipViewer
+    from route_engine.clipviewer import ClipJob, ClipViewer
 
     class Cam:
         id = "00001.07450"
@@ -694,7 +694,7 @@ def test_chat_understands_natural_phrasing(eng):
     Sealdah" was read as origin="how long" and failed to find it on the map.
     Six of six realistic phrasings failed. These are the exact strings.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "nlu")
     brain.handle("set work BBD Bagh", "nlu")
@@ -720,7 +720,7 @@ def test_bare_hour_resolves_to_the_next_occurrence(eng):
     At 18:30 "get me home by 6" parsed to 06:00, which is in the past, rolled to
     tomorrow morning, and answered a question nobody asked.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
     brain = ChatBrain(eng)
 
     eng.set_clock("09:00")
@@ -741,7 +741,7 @@ def test_from_split_is_linear_and_correct(eng):
     string split: it must give the same answers, and a hostile, very long
     message must be parsed in linear time instead of hanging the bot."""
     import time as _time
-    from triffie.chat import ChatBrain, _split_on_from
+    from route_engine.chat import ChatBrain, _split_on_from
 
     assert _split_on_from("Sealdah from Park Street", "get me to Sealdah from Park Street by 9") \
         == ("Park Street by 9", "Sealdah")
@@ -762,8 +762,8 @@ def test_chat_replies_restructured_for_sonarqube(eng):
     """The SonarQube cleanup turned nested conditional expressions in chat.py
     and personalize.py into plain branches and lookup tables. Pin every branch,
     so the wording commuters see cannot drift."""
-    from triffie.chat import ChatBrain, _mood
-    from triffie.personalize import UserProfile
+    from route_engine.chat import ChatBrain, _mood
+    from route_engine.personalize import UserProfile
 
     brain = ChatBrain(eng)
     uid = "sonar-chat"
@@ -802,7 +802,7 @@ def test_api_serves_the_dashboard_and_fails_cleanly(eng, monkeypatch):
     load depends on, and that camera and live-mode failures come back as a
     clear 503 rather than a crash."""
     from fastapi.testclient import TestClient
-    from triffie import api
+    from route_engine import api
 
     monkeypatch.setattr(api, "ENGINE", eng)       # reuse, do not rebuild
 
@@ -813,7 +813,7 @@ def test_api_serves_the_dashboard_and_fails_cleanly(eng, monkeypatch):
         def measurement(self, cam_id):
             return None
 
-    import triffie.liveservice as ls
+    import route_engine.liveservice as ls
     monkeypatch.setattr(ls, "service", lambda: NoCameras())
 
     client = TestClient(api.app)
@@ -844,7 +844,7 @@ def test_unknown_places_are_named_back_to_the_user(eng):
     find ... on the map." message, naming what the user typed, for trips and
     for incidents alike. The literal became one constant during the SonarQube
     cleanup; this pins the wording."""
-    from triffie.engine import NOT_ON_MAP
+    from route_engine.engine import NOT_ON_MAP
 
     with pytest.raises(ValueError) as e:
         eng.plan("Park Circus", "Nowhereville Xyzzy")
@@ -873,8 +873,8 @@ FIXTURE_CLIP = os.path.join(os.path.dirname(__file__), "fixtures", "tfl_piccadil
 def test_osm_download_retries_backs_off_and_refuses_holes(monkeypatch):
     """Transient errors and rate limits are retried with back-off; a tile that
     never succeeds aborts the import rather than leaving a hole in the map."""
-    from triffie import osm_import as oi
-    from triffie.config import CityBox
+    from route_engine import osm_import as oi
+    from route_engine.config import CityBox
 
     xml = (b'<osm><node id="1" lat="51.5" lon="-0.1"/><node id="2" lat="51.51" lon="-0.09"/>'
            b'<way id="9"><nd ref="1"/><nd ref="2"/><tag k="highway" v="primary"/></way></osm>')
@@ -912,7 +912,7 @@ def test_osm_graph_keeps_exactly_the_largest_strong_component():
     connected component: every kept node reaches every other, and no bigger
     strongly connected set exists (checked by brute force)."""
     import random as _random
-    from triffie import osm_import as oi
+    from route_engine import osm_import as oi
 
     rng = _random.Random(3)
     for trial in range(4):
@@ -973,9 +973,9 @@ def test_collector_sweep_and_cli(tmp_path, monkeypatch, capsys):
     """One sweep writes only good readings; the CLI honours --cycles, --ids,
     --exclude and --mapped, and exits non-zero when no camera is selected."""
     import sys as _sys
-    from triffie import collector as col
-    import triffie.live_engine as le
-    import triffie.network as nw
+    from route_engine import collector as col
+    import route_engine.live_engine as le
+    import route_engine.network as nw
 
     obs = tmp_path / "obs.jsonl"
     monkeypatch.setattr(col, "OBS_PATH", obs)
@@ -1019,7 +1019,7 @@ def test_collector_sweep_and_cli(tmp_path, monkeypatch, capsys):
 
 
 def test_benchmark_sampling_is_reproducible_and_bounded(eng):
-    from triffie.benchmark import Benchmark
+    from route_engine.benchmark import Benchmark
 
     a = [Benchmark(eng, seed=5).sample_od() for _ in range(1)]
     b1, b2 = Benchmark(eng, seed=5), Benchmark(eng, seed=5)
@@ -1038,7 +1038,7 @@ def test_camera_measurement_on_a_real_clip(monkeypatch):
     """YOLO11 + ByteTrack on a real 40-frame TfL clip, on the CPU (the GPU
     belongs to the collector)."""
     pytest.importorskip("ultralytics")
-    from triffie.livecams import LiveCameraReader, LiveCamera
+    from route_engine.livecams import LiveCameraReader, LiveCamera
 
     rd = LiveCameraReader(device="cpu")
     cam = LiveCamera(id="t", name="Piccadilly", lat=51.5, lon=-0.13, image_url="", video_url="")
@@ -1054,7 +1054,7 @@ def test_camera_measurement_on_a_real_clip(monkeypatch):
 
 def test_vision_speed_stats_on_a_real_clip():
     pytest.importorskip("ultralytics")
-    from triffie.vision import VehicleCounter
+    from route_engine.vision import VehicleCounter
 
     stats = VehicleCounter(device="cpu").analyse(FIXTURE_CLIP, max_frames=20)
     assert len(stats) == 20
@@ -1064,8 +1064,8 @@ def test_vision_speed_stats_on_a_real_clip():
 
 def test_clip_viewer_tracks_a_real_clip_and_fails_cleanly(monkeypatch):
     pytest.importorskip("ultralytics")
-    from triffie import clipviewer as cv
-    from triffie.livecams import LiveCamera
+    from route_engine import clipviewer as cv
+    from route_engine.livecams import LiveCamera
 
     class Resp:
         def __init__(self, code, body=b"", lm=None):
@@ -1102,7 +1102,7 @@ def _load_script(name):
 
 @pytest.fixture(scope="module")
 def london():
-    from triffie.live_engine import LiveEngine
+    from route_engine.live_engine import LiveEngine
     return LiveEngine(city="lon")
 
 
@@ -1163,12 +1163,12 @@ def test_live_chat_engine_matches_the_surface_chatbrain_needs():
     directly instead of waiting for an AttributeError mid-demo.
     """
     pytest.importorskip("torch")
-    from triffie.config import graph_path
+    from route_engine.config import graph_path
     if not graph_path("lon").exists():
         pytest.skip("London graph not imported")
-    from triffie.engine import TriffieEngine as _TE
-    from triffie.live_chat import LiveChatEngine
-    from triffie.live_engine import LiveEngine
+    from route_engine.engine import TriffieEngine as _TE
+    from route_engine.live_chat import LiveChatEngine
+    from route_engine.live_engine import LiveEngine
 
     needed = ("net", "profiles", "state", "now_s", "clock", "resolve",
               "plan", "leave_by", "network_stats")
@@ -1186,12 +1186,12 @@ def test_live_chat_engine_matches_the_surface_chatbrain_needs():
 def test_live_chat_answers_real_london_questions():
     """End to end: the shared brain against real camera data."""
     pytest.importorskip("torch")
-    from triffie.config import graph_path
+    from route_engine.config import graph_path
     if not graph_path("lon").exists():
         pytest.skip("London graph not imported")
-    from triffie.chat import ChatBrain
-    from triffie.live_chat import LiveChatEngine
-    from triffie.live_engine import LiveEngine
+    from route_engine.chat import ChatBrain
+    from route_engine.live_chat import LiveChatEngine
+    from route_engine.live_engine import LiveEngine
 
     live = LiveEngine(city="lon")
     if len(live.observations) < 10:
@@ -1224,13 +1224,13 @@ def test_cli_interactive_banner_works_in_both_modes():
     """
     import subprocess
     import sys as _sys
-    from triffie.config import graph_path
+    from route_engine.config import graph_path
 
     for args, expect in (([], "simulated"), (["--live"], "real cameras")):
         if args and not graph_path("lon").exists():
             continue
         proc = subprocess.run(
-            [_sys.executable, "-m", "triffie.cli", "--no-colour", "--ascii"] + args,
+            [_sys.executable, "-m", "route_engine.cli", "--no-colour", "--ascii"] + args,
             input="quit\n", capture_output=True, text=True, timeout=600,
             cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         assert proc.returncode == 0, (
@@ -1253,7 +1253,7 @@ def test_route_matcher_validates_the_origin_it_captured(eng):
     guards the rest, which was four of six failures found by testing real
     phrasing.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "origin-val")
@@ -1294,7 +1294,7 @@ def test_chat_never_blames_the_user_for_words_it_invented(eng):
     cannot resolve was never a place, and the honest reply is either the general
     answer or "I did not catch that", never an accusation.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "blame")
@@ -1332,7 +1332,7 @@ def test_chat_handles_the_second_round_of_real_phrasings(eng):
     are the exact strings; the reply each one needs is asserted, not merely that
     it parsed, because "parsed" was never the complaint - being answered was.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "round2")
@@ -1381,7 +1381,7 @@ def test_saved_places_are_consulted_before_the_geocoder(eng):
     because it looks like an answer. Saved words must win before the geocoder
     is asked, and when nothing is saved the bot must ask instead of guessing.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     assert eng.resolve("office").name != "BBD Bagh", (
         "premise of this test: the geocoder does not know 'office' means work")
@@ -1407,7 +1407,7 @@ def test_small_talk_does_not_swallow_route_feedback(eng):
     Had it run first and claimed "great" / "nice", the profile would have
     stopped learning while still looking like it worked.
     """
-    from triffie.chat import ChatBrain, THANKS
+    from route_engine.chat import ChatBrain, THANKS
 
     verdicts = {"good", "bad", "great", "terrible", "awful", "nice"}
     assert not (THANKS & verdicts), (
@@ -1459,7 +1459,7 @@ def test_validation_split_survives_a_collection_outage(tmp_path):
     """
     import json
 
-    from triffie import validate
+    from route_engine import validate
 
     path = tmp_path / "gapped.jsonl"
     path.write_text("\n".join(json.dumps(r) for r in _gapped_obs()),
@@ -1494,7 +1494,7 @@ def test_validation_scores_one_continuous_run_not_across_an_outage(tmp_path):
     """
     import json
 
-    from triffie import validate
+    from route_engine import validate
 
     path = tmp_path / "gapped.jsonl"
     path.write_text("\n".join(json.dumps(r) for r in _gapped_obs()),
@@ -1530,7 +1530,7 @@ def test_validation_refuses_to_publish_without_a_fitted_blend(tmp_path, capsys):
     """
     import json
 
-    from triffie import validate
+    from route_engine import validate
 
     # One short block: enough rows to get past the length check, nowhere near
     # enough spread to fit a blend on.
@@ -1554,7 +1554,7 @@ def test_a_question_containing_to_is_not_a_trip_from_a_place(eng):
     or a wh-word is a question, not a pair of place names - and unlike a list
     of phrasings, English auxiliaries are a closed class that cannot go stale.
     """
-    from triffie.chat import ChatBrain, _is_question
+    from route_engine.chat import ChatBrain, _is_question
 
     assert _is_question("am i going to be late")
     assert _is_question("is it better to go now or in an hour")
@@ -1586,7 +1586,7 @@ def test_chat_names_its_own_limits_instead_of_failing_to_parse(eng):
     README.md states openly ("no public transport / multi-modal"). A prototype
     that cannot say its own documented limits out loud is hiding them.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "scope")
@@ -1621,7 +1621,7 @@ def test_chat_names_its_own_limits_instead_of_failing_to_parse(eng):
 
 def test_chat_answers_questions_about_itself(eng):
     """"who are you", "what can you do", "what do you know about me"."""
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "meta")
@@ -1655,7 +1655,7 @@ def test_home_and_work_shorthands_all_agree(eng):
     home starts from work - the reading `commute` has always given a bare
     "home", and the one _check_trip_ends documents.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "hw")
@@ -1691,7 +1691,7 @@ def test_go_now_or_wait_recommends_on_arrival_not_drive_time(eng):
     minutes only wins if the drive falls by more than w - which on a 20-minute
     trip means an incident lifting, not traffic easing.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "wtg")
@@ -1722,7 +1722,7 @@ def test_go_now_or_wait_says_wait_when_waiting_genuinely_wins(eng):
     stubbed - an unexercised branch that only fires on the day something big
     clears is a branch nobody has ever seen run.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     class _Route:
         def __init__(self, median_s):
@@ -1765,7 +1765,7 @@ def test_chat_compares_two_destinations(eng):
     Shares the "X or Y" shape with the now-or-later question, so ordering
     matters: _cmd_when_to_go owns "go now or in an hour" and must see it first.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "cmp")
@@ -1806,7 +1806,7 @@ def test_chat_links_back_to_our_own_map_not_googles(eng):
     """
     from urllib.parse import parse_qs, urlparse
 
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     out = brain.handle("Park Circus to Esplanade", "maplink")
@@ -1823,7 +1823,7 @@ def test_chat_links_back_to_our_own_map_not_googles(eng):
     assert " " not in url
 
     # An empty MAP_BASE turns the link off, for when nothing is serving.
-    import triffie.chat as chat_mod
+    import route_engine.chat as chat_mod
     real = chat_mod.MAP_BASE
     chat_mod.MAP_BASE = ""
     try:
@@ -1843,7 +1843,7 @@ def test_route_map_image_is_drawn_from_our_own_graph(tmp_path, eng):
     """
     import cv2
 
-    from triffie import mapimg
+    from route_engine import mapimg
 
     plan = eng.plan("Park Circus", "Esplanade", user_id="mapimg", k=3)
     out = mapimg.render_route(eng.net, plan, tmp_path / "route.png")
@@ -1873,7 +1873,7 @@ def test_route_map_projection_keeps_the_aspect_honest(eng):
     east-west, which would make every angle on it wrong - and a map that
     misrepresents shape is worse than no map, because it looks authoritative.
     """
-    from triffie import mapimg
+    from route_engine import mapimg
 
     # A square in metres is NOT a square in degrees at 22 N.
     box = (22.50, 88.30, 22.51, 88.31)
@@ -1902,7 +1902,7 @@ def test_server_listens_on_both_loopback_stacks():
     """
     import socket
 
-    from triffie.api import _loopback_sockets
+    from route_engine.api import _loopback_sockets
 
     # Port 0 asks the OS for a free port, so this cannot collide with a running
     # dashboard or leave anything behind.
@@ -1930,8 +1930,8 @@ def test_no_loopback_map_link_is_sent_to_a_remote_reader(eng):
     bot is broken. Remote readers get the drawn PNG instead, which needs no
     network of ours; a link is only worth sending when it can actually resolve.
     """
-    import triffie.chat as chat_mod
-    from triffie.chat import ChatBrain, _is_loopback
+    import route_engine.chat as chat_mod
+    from route_engine.chat import ChatBrain, _is_loopback
 
     for base in ("http://127.0.0.1:8000", "http://localhost:8000",
                  "http://[::1]:8000", "http://0.0.0.0:8000"):
@@ -1964,8 +1964,8 @@ def test_serving_on_the_network_fixes_the_map_links_too(monkeypatch):
     keeps handing that phone a link it cannot open. Two settings that must
     agree is one too many, and the failure is silent.
     """
-    import triffie.chat as chat_mod
-    from triffie.api import _point_map_links_at
+    import route_engine.chat as chat_mod
+    from route_engine.api import _point_map_links_at
 
     monkeypatch.setattr(chat_mod, "MAP_BASE", "http://127.0.0.1:8000")
     _point_map_links_at("192.168.1.50", 8000)
@@ -1985,7 +1985,7 @@ def test_serving_on_the_network_fixes_the_map_links_too(monkeypatch):
 
 def test_lan_addresses_never_returns_loopback():
     """The printed "type this on your phone" address must be a real one."""
-    from triffie.api import _lan_addresses
+    from route_engine.api import _lan_addresses
 
     for ip in _lan_addresses():
         assert not ip.startswith("127."), "%s is this device, not the laptop" % ip
@@ -2006,7 +2006,7 @@ def test_viewer_mode_refuses_shared_state_writes_but_still_routes(eng, monkeypat
     """
     from fastapi.testclient import TestClient
 
-    from triffie import api
+    from route_engine import api
 
     monkeypatch.setattr(api, "ENGINE", eng)
     monkeypatch.setattr(api, "READONLY", True)
@@ -2036,7 +2036,7 @@ def test_demo_controls_work_when_not_in_viewer_mode(eng, monkeypatch):
     """The guard must be off by default, or the presenter loses their own demo."""
     from fastapi.testclient import TestClient
 
-    from triffie import api
+    from route_engine import api
 
     monkeypatch.setattr(api, "ENGINE", eng)
     monkeypatch.setattr(api, "READONLY", False)
@@ -2056,7 +2056,7 @@ def test_every_mutating_route_is_listed_as_shared_state():
     added later is open by default. This fails until someone decides which it
     is.
     """
-    from triffie import api
+    from route_engine import api
 
     posts = {r.path for r in api.app.routes
              if "POST" in getattr(r, "methods", set())}
@@ -2078,7 +2078,7 @@ def test_every_message_gets_a_reply_even_when_the_engine_fails(eng, caplog):
     ignoring them.
     """
     import logging as _logging
-    from triffie.chat import ChatBrain, MAX_MESSAGE_CHARS
+    from route_engine.chat import ChatBrain, MAX_MESSAGE_CHARS
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "boom")
@@ -2112,8 +2112,8 @@ def test_unparsed_messages_are_recorded_for_the_next_iteration(eng, tmp_path,
     users produce ones nobody imagined, and unless they are captured when they
     fail they are gone when the session ends.
     """
-    from triffie import chat as chat_mod
-    from triffie.chat import ChatBrain
+    from route_engine import chat as chat_mod
+    from route_engine.chat import ChatBrain
 
     log = tmp_path / "misses.jsonl"
     monkeypatch.setattr(chat_mod, "MISS_LOG", log)
@@ -2148,7 +2148,7 @@ def test_a_bare_yes_is_not_treated_as_a_failed_route(eng):
     it within minutes of logging being switched on. The old reply was "I did
     not catch a route in that", which is a strange answer to agreement.
     """
-    from triffie.chat import ChatBrain
+    from route_engine.chat import ChatBrain
 
     brain = ChatBrain(eng)
     brain.handle("set home Park Circus", "yes-user")

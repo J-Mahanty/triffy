@@ -37,7 +37,7 @@ import requests
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from triffie.live_engine import LiveEngine
+from route_engine.live_engine import LiveEngine
 
 UA = {"User-Agent": "Triffie-DesignThinkingLab/0.1 (academic prototype)"}
 OSRM = "https://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f"

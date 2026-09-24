@@ -324,7 +324,7 @@ def load_network(city: str | None = None) -> RoadNetwork:
     path = graph_path(key)
     if not path.exists():
         raise FileNotFoundError(
-            "No road graph for '%s'. Run:  python -m triffie.osm_import %s" % (key, key))
+            "No road graph for '%s'. Run:  python -m route_engine.osm_import %s" % (key, key))
     data = json.loads(path.read_text(encoding="utf-8"))
     net = RoadNetwork(data)
     _CACHE[key] = net

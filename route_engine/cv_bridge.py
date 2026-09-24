@@ -8,7 +8,7 @@ because it *is* exactly like any other feed.
 
 Usage during a demo, in a second terminal:
 
-    python -m triffie.cv_bridge --video data/video/vehicles.mp4 --cam CAM007
+    python -m route_engine.cv_bridge --video data/video/vehicles.mp4 --cam CAM007
 
 The dashboard will then show CAM007 sourced from "YOLO11 on live video".
 """
