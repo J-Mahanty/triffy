@@ -1,0 +1,62 @@
+Booting engine...
+Running 480 trips across the day...
+  08:00   40 trips  ( 29.0s elapsed)
+  08:45   40 trips  ( 52.7s elapsed)
+  09:15   40 trips  ( 82.4s elapsed)
+  09:45   40 trips  (106.9s elapsed)
+  12:30   40 trips  (127.5s elapsed)
+  15:00   40 trips  (146.8s elapsed)
+  17:30   40 trips  (174.0s elapsed)
+  18:15   40 trips  (198.0s elapsed)
+  18:45   40 trips  (222.4s elapsed)
+  19:15   40 trips  (247.6s elapsed)
+  20:00   40 trips  (269.7s elapsed)
+  22:00   40 trips  (287.5s elapsed)
+
+==========================================================================
+TRIFFIE BENCHMARK  -  Kolkata — Esplanade / Park Street / BBD Bagh
+480 trips  |  400 cameras  |  13387 directed edges
+==========================================================================
+
+router           travel    vs best    ETA error    ETA bias   on-time
+                  (min)              (min, abs)       (min)       (%)
+--------------------------------------------------------------------------
+triffie            18.7       best         1.02       -0.32      82.9
+snapshot           18.7       +0.1         1.49       -0.36      71.9
+historical         18.7       +0.0         1.02        0.03      81.2
+
+PAIRED COMPARISON (same trip, same departure, same world)
+--------------------------------------------------------------------------
+  Triffie vs snapshot:
+    travel time saved    +0.09 min/trip  (+0.5%)
+    ETA error reduced    31.4%
+    win / tie / loss    13% / 79% / 9%
+  Triffie vs historical:
+    travel time saved    +0.02 min/trip  (+0.1%)
+    ETA error reduced     0.1%
+    win / tie / loss    5% / 91% / 4%
+
+WHERE THE VALUE IS  (Triffie vs snapshot, by trip type)
+--------------------------------------------------------------------------
+  corridor had a live incident     n=93    +0.24 min (+1.1%)  win 18% / loss 8%
+  network clear on this corridor   n=387   +0.05 min (+0.3%)  win 12% / loss 9%
+
+  Routing only differs when there is something to route around.
+  Averaged over a quiet network every sensible router agrees,
+  which is why the headline figure is modest and the
+  disrupted-corridor figure is the one that matters.
+
+ASSUMPTIONS
+--------------------------------------------------------------------------
+  * 'snapshot' reimplements the live-traffic approach of mainstream
+    navigation apps. It is NOT Google Maps or Waze itself, and no
+    claim about their real-world performance is made here.
+  * Baseline plans on data lagged by 300 s, modelling floating-car GPS
+    aggregation latency. Triffie uses camera data at zero lag.
+  * All routers are scored by driving their chosen route through the
+    same simulated world, never against their own estimate.
+  * Triffie's historical model carries a per-edge bias, so it does
+    not secretly know the simulator's ground truth.
+==========================================================================
+
+Wrote C:\Armageddon\Triffie\data\benchmark.json

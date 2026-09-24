@@ -1,0 +1,17 @@
+# Core: everything needed to plan routes, run the analysis and serve the API.
+# No GPU, no deep-learning libraries. Needs Python 3.10 or newer (tested on 3.13).
+numpy>=1.24
+scipy>=1.10
+requests>=2.28
+opencv-python>=4.8
+# Time-zone database. Windows has none built in, and the London clock needs it.
+tzdata
+
+# API
+fastapi>=0.100
+uvicorn>=0.23
+pydantic>=2.0
+
+# Tests
+pytest>=7.0
+httpx>=0.24
