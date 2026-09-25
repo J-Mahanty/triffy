@@ -79,6 +79,9 @@ class Route:
     # snapshot baseline this differs from ``mean_s``, and the gap is precisely
     # the ETA error caused by planning against frozen conditions.
     claimed_s: float = 0.0
+    # Each edge's forecast speed as a share of its free-flow speed, at the
+    # moment the traveller reaches it (1.0 = free flowing).
+    speed_ratio: list = field(default_factory=list)
 
     # -- ETA distribution ---------------------------------------------------
     # Travel time is right-skewed: you can always be much later than expected,
@@ -339,11 +342,31 @@ class Router:
                 penalty[edges] *= DIVERSITY_PENALTY
                 continue
             r.steps = self._directions(edges, depart_s)
+            r.speed_ratio = self._speed_ratios(edges, depart_s)
             out.append(r)
             penalty[edges] *= DIVERSITY_PENALTY
 
         for i, r in enumerate(out):
             r.label = _label_route(r, out, i)
+        return out
+
+    def _speed_ratios(self, edges, depart_s: float) -> list:
+        """Each edge's forecast speed as a share of free flow, when reached.
+
+        Advances the clock exactly as ``_evaluate`` does, so each stretch is
+        judged at the moment the traveller is actually on it.
+        """
+        net, prof = self.net, self.profile
+        t = depart_s
+        out = []
+        prev = None
+        for e in edges:
+            out.append(round(prof.speed(e, t) / max(float(net.ekph[e]), 1.0), 3))
+            mean, _ = prof.traverse_s(net, e, t)
+            if prev is not None:
+                mean += self._turn_cost(prev, e)
+            t += mean
+            prev = e
         return out
 
     def _evaluate(self, edges, depart_s: float):
@@ -367,6 +390,7 @@ class Router:
                   sigma_s=math.sqrt(var),
                   distance_m=float(sum(self.net.elen[e] for e in edges)))
         r.steps = self._directions(edges, depart_s)
+        r.speed_ratio = self._speed_ratios(edges, depart_s)
         return r
 
     # -- turn-by-turn -------------------------------------------------------

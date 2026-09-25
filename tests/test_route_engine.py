@@ -142,6 +142,14 @@ def test_traffic_levels_follow_the_dashboard_bands():
     assert traffic_level(0.20) == 3         # congestion 1.0: near gridlock
 
 
+def test_routes_record_predicted_speed_per_edge(eng):
+    plan = eng.plan("Park Circus", "BBD Bagh", user_id="exec", k=3)
+    for r in plan.routes:
+        assert len(r.speed_ratio) == len(r.edges)
+        # Personal profiles cap speed at 105% of free flow.
+        assert all(0.0 < x <= 1.06 for x in r.speed_ratio)
+
+
 def test_eta_distribution_is_ordered(eng):
     plan = eng.plan("Sealdah", "Victoria Memorial", user_id="rider")
     r = plan.best
