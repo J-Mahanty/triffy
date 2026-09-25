@@ -4,7 +4,7 @@ services:
     ports:
       - "${APP_PORT}:35000"
     env_file:
-      - .env
+      - stack.env
     environment:
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
