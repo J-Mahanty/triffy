@@ -42,7 +42,7 @@ async def on_ready():
     if engine is None:
         engine = await asyncio.to_thread(
             TriffyEngine,
-            start_clock=datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M"),
+            start_clock = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M"),
         )
         print(f"Engine ready — {engine.city} @ {engine.clock}")
 
@@ -71,6 +71,18 @@ async def on_member_join(member) :
 # Reply to hello greeting
 async def hello(ctx) :
     await ctx.send(f"Hello {ctx.author.name}, I am triffy")
+
+
+async def _send_long(ctx, text, limit=1900):
+    while text:
+        if len(text) <= limit:
+            await ctx.send(text)
+            return
+        cut = text.rfind("\n", 0, limit)
+        if cut == -1:
+            cut = limit
+        await ctx.send(text[:cut])
+        text = text[cut:].lstrip("\n")
 
 
 @client.command(help="Start a new trip")
