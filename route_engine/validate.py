@@ -1,4 +1,4 @@
-"""Validate Triffie's forecasting against real measured traffic.
+"""Validate Triffy's forecasting against real measured traffic.
 
 This is the module that answers "how do you know any of this works?" without
 appealing to our own simulator.
@@ -19,7 +19,7 @@ the driver will reach it, and time-dependent routing is worthless.
   horizons, which is why beating it means something.
 * ``historical``   - "it will be whatever this camera normally shows at this
   time of day". No live input at all.
-* ``triffie``      - where it is now, plus where it is heading, plus the
+* ``triffy``      - where it is now, plus where it is heading, plus the
   long-run profile's view, the last decayed over the horizon:
 
       pred = c0 + damp*slope*horizon + (h_then - h_now)*exp(-horizon/tau)
@@ -34,13 +34,13 @@ historical profile is *learned* from slice 1, so on slice 1 it looks far more
 accurate than it really is. Fitting the blend parameters there too makes the
 fitter conclude "trust history, ignore the live cameras", pick a tiny tau, and
 destroy the live signal - which is exactly what happened on the first attempt,
-leaving Triffie 220% worse than persistence. Parameters are therefore fitted on
+leaving Triffy 220% worse than persistence. Parameters are therefore fitted on
 slice 2, which the profile has never seen, and scored on slice 3.
 
 **A note on what this can and cannot show.** Whether the trend term helps on real
 traffic is an empirical question, not a foregone conclusion: if the 20-minute
 change is smaller than the measurement noise, the fitter will correctly set
-``damp`` to zero and Triffie will tie persistence. That is a real result and
+``damp`` to zero and Triffy will tie persistence. That is a real result and
 should be reported as one, not tuned away.
 
 **The metric is vehicle count, deliberately.** Counting needs no camera
@@ -262,7 +262,7 @@ def fit_params(pairs, hist: HistoricalProfile, horizon_s: float):
         return best, best_err
     for tau in TAU_GRID:
         for damp in DAMP_GRID:
-            errs = [abs(triffie_forecast(p, hist, horizon_s, (tau, damp)) - p["c1"])
+            errs = [abs(triffy_forecast(p, hist, horizon_s, (tau, damp)) - p["c1"])
                     for p in pairs]
             e = statistics.fmean(errs)
             if e < best_err:
@@ -270,7 +270,7 @@ def fit_params(pairs, hist: HistoricalProfile, horizon_s: float):
     return best, best_err
 
 
-def triffie_forecast(p, hist: HistoricalProfile, horizon_s: float,
+def triffy_forecast(p, hist: HistoricalProfile, horizon_s: float,
                      params) -> float:
     """Persistence + recent trend + decayed historical correction.
 
@@ -363,7 +363,7 @@ def run(horizon_s: float = 1200.0, split: float = 0.6, tol_s: float = 150.0,
     # and last cameras rather than of the dataset. With two collector series
     # started 25 minutes apart that produced a negative span, a three-way split
     # with zero tuning pairs, and a silent fallback to "no trend, no decay" -
-    # which made Triffie identical to persistence by construction. Synthetic
+    # which made Triffy identical to persistence by construction. Synthetic
     # tests never caught it because there every camera shares one time range.
     flat = sorted(((cid, t, c, m) for cid, rows in series.items()
                    for (t, c, m, _n) in rows),
@@ -399,7 +399,7 @@ def run(horizon_s: float = 1200.0, split: float = 0.6, tol_s: float = 150.0,
     # on 19-20 Sep the laptop slept and left a 10.3 hour hole. 45% and 60% of
     # that span both land inside the hole, so the tuning slice held ZERO pairs,
     # the fitter fell back to "no decay, no trend" - which is persistence,
-    # exactly - and the run published "Triffie beats persistence by -0.0%".
+    # exactly - and the run published "Triffy beats persistence by -0.0%".
     # A measurement of a thing against itself, under a REAL DATA badge.
     #
     # Taking the cut at a quantile of the sorted observations instead makes
@@ -427,7 +427,7 @@ def run(horizon_s: float = 1200.0, split: float = 0.6, tol_s: float = 150.0,
         # Refuse, rather than falling back to (tau=inf, damp=0).
         #
         # That fallback does not degrade the forecaster gracefully - it deletes
-        # it. With no decay and no trend weight, triffie_forecast reduces to
+        # it. With no decay and no trend weight, triffy_forecast reduces to
         # persistence term for term, so the table then compares a thing with
         # itself and prints a headline of -0.0% that reads like a finding. It
         # published exactly that once, off the back of the sleep outage above.
@@ -436,8 +436,8 @@ def run(horizon_s: float = 1200.0, split: float = 0.6, tol_s: float = 150.0,
         # contract as the held-out check: say what is missing, return {}.
         print("Only %d tuning pairs - not enough to fit the blend, so there is"
               % len(tune_pairs))
-        print("no Triffie to score. NOT publishing: with no fitted parameters")
-        print("Triffie collapses into persistence and the comparison is")
+        print("no Triffy to score. NOT publishing: with no fitted parameters")
+        print("Triffy collapses into persistence and the comparison is")
         print("meaningless. Collect more, or widen --split.")
         return {}
 
@@ -446,7 +446,7 @@ def run(horizon_s: float = 1200.0, split: float = 0.6, tol_s: float = 150.0,
     train_pairs = tune_pairs
 
     results = {
-        "triffie": score(test_pairs, triffie_forecast, hist, horizon_s, params),
+        "triffy": score(test_pairs, triffy_forecast, hist, horizon_s, params),
         "persistence": score(test_pairs, persistence_forecast, hist,
                              horizon_s, params),
         "historical": score(test_pairs, historical_forecast, hist,
@@ -524,7 +524,7 @@ def report(out: dict) -> str:
         # that, rather than letting a 0.0% be read as a measured tie.
         L.append("")
         L.append("  NOTE  the fit chose no decay AND no trend, so on this data")
-        L.append("        Triffie reduces to persistence exactly. The margin")
+        L.append("        Triffy reduces to persistence exactly. The margin")
         L.append("        below is not a measurement of anything.")
     L.append("")
     L.append("  %-14s %8s %8s %8s %10s" % ("forecaster", "MAE", "median", "RMSE", "MAPE"))
@@ -536,13 +536,13 @@ def report(out: dict) -> str:
                  % (k, d["mae"], d["median_ae"], d["rmse"], d["mape"]))
     L.append("")
 
-    t, p = r["triffie"]["mae"], r["persistence"]["mae"]
+    t, p = r["triffy"]["mae"], r["persistence"]["mae"]
     h = r["historical"]["mae"]
     L.append("  vs persistence (the snapshot assumption): %+.1f%%"
              % (100.0 * (t - p) / p))
     L.append("  vs historical  (no live data at all)    : %+.1f%%"
              % (100.0 * (t - h) / h))
-    L.append("  (negative = Triffie is more accurate)")
+    L.append("  (negative = Triffy is more accurate)")
     L.append("")
     L.append("  Units are vehicles in frame. Counting needs no camera")
     L.append("  calibration, so this number cannot be attacked by")

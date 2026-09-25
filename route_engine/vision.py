@@ -305,7 +305,7 @@ def annotate(source, out_path: str, model_name: str = "yolo11n.pt",
         vis = res.plot()
         count = 0 if res.boxes is None else len(res.boxes)
         cv2.rectangle(vis, (0, 0), (360, 64), (12, 16, 22), -1)
-        cv2.putText(vis, "TRIFFIE  CAM FEED", (12, 24),
+        cv2.putText(vis, "TRIFFY  CAM FEED", (12, 24),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, (192, 214, 55), 1, cv2.LINE_AA)
         cv2.putText(vis, "vehicles in frame: %d" % count, (12, 50),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (230, 237, 245), 1, cv2.LINE_AA)
@@ -317,7 +317,7 @@ def annotate(source, out_path: str, model_name: str = "yolo11n.pt",
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Run Triffie's vehicle CV on a video")
+    ap = argparse.ArgumentParser(description="Run Triffy's vehicle CV on a video")
     ap.add_argument("source", help="video file, or a webcam index like 0")
     ap.add_argument("--frames", type=int, default=200)
     ap.add_argument("--fov", type=float, default=110.0,

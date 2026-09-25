@@ -6,7 +6,7 @@ fetching map tiles, for three reasons:
 
 * **It works offline and on stage.** No tile server, no API key, no rate limit,
   no request leaving the laptop at the moment someone is watching.
-* **It shows what only Triffie knows.** The recommended route is coloured by the
+* **It shows what only Triffy knows.** The recommended route is coloured by the
   congestion forecast along it, edge by edge, in the dashboard's own traffic
   colours; a tile map would only show where the road is.
 * **It costs nothing to add.** Matplotlib is already installed as a dependency
@@ -27,7 +27,7 @@ from matplotlib.collections import LineCollection
 from matplotlib.figure import Figure
 from matplotlib import patheffects
 
-# The dashboard's palette (web/style.css), so a map in chat looks like Triffie.
+# The dashboard's palette (web/style.css), so a map in chat looks like Triffy.
 TRAFFIC = ("#1e9e57", "#e7a300", "#e0600e", "#b42318")   # --t0 .. --t3
 TRAFFIC_NAMES = ("Flowing", "Slowing", "Congested", "Near gridlock")
 BLUE = "#1f5ae6"
@@ -109,7 +109,7 @@ def render(net, routes, highlight: int = 0, speeds=None, title: str = "",
     """PNG bytes of ``routes`` on the road network, ``routes[highlight]`` on top.
 
     ``speeds`` (km/h per edge) colours the highlighted route by congestion;
-    without it the route is drawn in Triffie blue. ``incidents`` and
+    without it the route is drawn in Triffy blue. ``incidents`` and
     ``cameras`` are (lat, lon) points; ``route_cameras`` are cameras that watch
     this route and are drawn larger.
     """

@@ -1,4 +1,4 @@
-"""The Triffie engine: one object that owns the whole pipeline.
+"""The Triffy engine: one object that owns the whole pipeline.
 
 Every interface - web dashboard, Discord bot, CLI, benchmark - talks to this
 class, so they cannot drift apart. It holds the simulated world, the camera
@@ -115,7 +115,7 @@ def latest_departure(planner, origin: str, destination: str, arrive_by: str,
     return best, deadline_s
 
 
-class TriffieEngine:
+class TriffyEngine:
     def __init__(self, city: str = ACTIVE_CITY, seed: int = 20260919,
                  cam_budget: int = 400, start_clock: str = "18:30"):
         self.city = city

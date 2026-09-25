@@ -11,7 +11,7 @@ by 9:30"), and a deterministic parser has three properties that matter for a
 live demo: it cannot hallucinate a destination, it runs in microseconds, and it
 behaves identically every time you show it to someone.
 
-The same brain serves simulated Kolkata (``TriffieEngine``) and live London
+The same brain serves simulated Kolkata (``TriffyEngine``) and live London
 (``live_chat.LiveChatEngine``, which offers the same surface). The few answers
 that genuinely differ - there is no clock to move in London, and its
 "incidents" are what the cameras see - branch on ``self.live``.
@@ -24,7 +24,7 @@ from dataclasses import dataclass
 from urllib.parse import urlencode, urlsplit
 
 from .config import ACTIVE_CITY, DATA, MAP_BASE
-from .engine import TriffieEngine
+from .engine import TriffyEngine
 from .network import _norm
 from .simulator import fmt_clock
 
@@ -46,7 +46,7 @@ EXAMPLES = {
             "Trafalgar Square"),
 }
 
-HELP = """**Triffie** — your commute, predicted.
+HELP = """**Triffy** — your commute, predicted.
 
 **Plan a trip**
 • `{a} to {b}`
@@ -193,9 +193,9 @@ class Reply:
 
 
 class ChatBrain:
-    def __init__(self, engine: TriffieEngine | None = None,
+    def __init__(self, engine: TriffyEngine | None = None,
                  remote: bool = False):
-        self.eng = engine or TriffieEngine()
+        self.eng = engine or TriffyEngine()
         self.live = bool(getattr(self.eng, "is_live", False))
         self.city = getattr(self.eng, "city", ACTIVE_CITY)
         # True when the person reading the answer is NOT at this machine -
@@ -942,7 +942,7 @@ class ChatBrain:
         a, b = EXAMPLES.get(self.city, EXAMPLES["kol"])[:2]
 
         if q in IDENTITY:
-            return ("I am Triffie — a commute assistant, and a student "
+            return ("I am Triffy — a commute assistant, and a student "
                     "prototype, not a product. I predict what the roads will "
                     "be like *when you get there* rather than what they are "
                     "like now, and I try to tell you when I am unsure.\n"
@@ -1059,7 +1059,7 @@ class ChatBrain:
         instead, which needs no network of ours at all.
 
         To give remote users a working link, serve the dashboard on the network
-        (`TRIFFIE_HOST=0.0.0.0`) and set `TRIFFIE_MAP_BASE` to that address.
+        (`TRIFFY_HOST=0.0.0.0`) and set `TRIFFY_MAP_BASE` to that address.
         """
         if not MAP_BASE or not origin or not dest:
             return ""

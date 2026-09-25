@@ -1,6 +1,6 @@
 r"""Forecasting: what will each road look like when the driver actually gets there?
 
-This is the module that makes Triffie different from a snapshot router.
+This is the module that makes Triffy different from a snapshot router.
 
 A consumer app typically chooses a route using current speeds, then quotes an
 ETA. But you reach the eighth segment of your route 25 minutes from now, and by

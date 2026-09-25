@@ -20,7 +20,7 @@ import requests
 
 from .config import CITIES, DEFAULT_CLASS, ROAD_CLASS, CityBox, graph_path
 
-UA = {"User-Agent": "Triffie-DesignThinkingLab/0.1 (academic prototype)"}
+UA = {"User-Agent": "Triffy-DesignThinkingLab/0.1 (academic prototype)"}
 OSM_API = "https://api.openstreetmap.org/api/0.6/map"
 WANTED = set(ROAD_CLASS)
 

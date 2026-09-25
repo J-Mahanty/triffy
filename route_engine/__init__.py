@@ -1,4 +1,4 @@
-"""Triffie — a commuter routing assistant that optimises for not being late.
+"""Triffy — a commuter routing assistant that optimises for not being late.
 
 Design Thinking lab prototype. Real OpenStreetMap road network, real computer
 vision on camera footage, simulated traffic conditions.

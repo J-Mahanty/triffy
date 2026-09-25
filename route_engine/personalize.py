@@ -37,7 +37,7 @@ PROFILES_PATH = DATA / "profiles.json"
 
 @dataclass
 class UserProfile:
-    """Everything Triffie knows about one commuter."""
+    """Everything Triffy knows about one commuter."""
     user_id: str
     name: str = "Commuter"
     vehicle: str = "car"              # car | motorcycle | auto | taxi

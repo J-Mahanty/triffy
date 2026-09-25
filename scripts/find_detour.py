@@ -1,4 +1,4 @@
-"""Find the best live example of Triffie routing around real congestion.
+"""Find the best live example of Triffy routing around real congestion.
 
 The single most convincing thing this project can show is a route that is
 *longer in distance and shorter in time* because real cameras say the direct
@@ -137,7 +137,7 @@ def _print_detours(found: list, top: int) -> None:
     print("=" * 94)
     for f in found[:top]:
         print("\n  %s -> %s" % (f["origin"], f["dest"]))
-        print("    Triffie  %5.2f km  %5.1f min   via %s"
+        print("    Triffy  %5.2f km  %5.1f min   via %s"
               % (f["chosen_km"], f["chosen_min"], ", ".join(f["via"])))
         print("    shortest %5.2f km  %5.1f min   via %s"
               % (f["short_km"], f["short_min"], ", ".join(f["short_via"])))
@@ -148,7 +148,7 @@ def _print_detours(found: list, top: int) -> None:
     print()
     print("=" * 94)
     print("USE THIS ONE:  %s -> %s" % (best["origin"], best["dest"]))
-    print('  "Triffie sends me %.1f km further round, and I get there %.0f minutes'
+    print('  "Triffy sends me %.1f km further round, and I get there %.0f minutes'
           % (best["extra_km"], best["saved_min"]))
     print('   sooner, because real cameras say %s is blocked right now."'
           % best["short_via"][0])

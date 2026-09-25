@@ -19,7 +19,7 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from route_engine.engine import TriffieEngine
+from route_engine.engine import TriffyEngine
 from route_engine.network import load_network
 from route_engine.router import Router
 from route_engine.simulator import TrafficSim, diurnal, parse_clock
@@ -27,7 +27,7 @@ from route_engine.simulator import TrafficSim, diurnal, parse_clock
 
 @pytest.fixture(scope="module")
 def eng():
-    return TriffieEngine(start_clock="18:30", cam_budget=200)
+    return TriffyEngine(start_clock="18:30", cam_budget=200)
 
 
 # ---------------------------------------------------------------------------
@@ -399,7 +399,7 @@ def test_validation_exploits_a_recoverable_trend(tmp_path):
     assert out, "validation produced no result on a clean synthetic series"
     assert out["trend_damping"] > 0.0, "fitter ignored a clearly recoverable trend"
     r = out["results"]
-    assert r["triffie"]["mae"] < r["persistence"]["mae"] * 0.95, \
+    assert r["triffy"]["mae"] < r["persistence"]["mae"] * 0.95, \
         "trend term failed to beat persistence where a trend exists"
 
 
@@ -540,7 +540,7 @@ def test_validation_forecast_matches_the_production_equation():
     would be worse than no validation at all.
     """
     import math
-    from route_engine.validate import HistoricalProfile, triffie_forecast
+    from route_engine.validate import HistoricalProfile, triffy_forecast
 
     rows = [("camA", 1000.0 + i * 300, 10.0, 0.5) for i in range(20)]
     hist = HistoricalProfile(rows)
@@ -548,7 +548,7 @@ def test_validation_forecast_matches_the_production_equation():
          "slope": 0.002}
 
     horizon, tau, damp = 1200.0, 1200.0, 0.5
-    got = triffie_forecast(p, hist, horizon, (tau, damp))
+    got = triffy_forecast(p, hist, horizon, (tau, damp))
     h_now = hist.expect("camA", p["t0"])
     h_then = hist.expect("camA", p["t1"])
     want = (h_then
@@ -557,11 +557,11 @@ def test_validation_forecast_matches_the_production_equation():
     assert abs(got - want) < 1e-9
 
     # A huge tau means the live reading never decays: pure persistence-like.
-    far = triffie_forecast(p, hist, horizon, (1e12, damp))
+    far = triffy_forecast(p, hist, horizon, (1e12, damp))
     assert far > got, "with no decay the live anomaly must persist more strongly"
 
     # Zero damping must remove the trend term entirely.
-    flat = triffie_forecast(p, hist, horizon, (tau, 0.0))
+    flat = triffy_forecast(p, hist, horizon, (tau, 0.0))
     assert abs(flat - (got - damp * p["slope"] * horizon)) < 1e-9
 
 
@@ -608,7 +608,7 @@ def test_dashboard_camera_wall_stays_off_the_gpu_and_annotates_once(monkeypatch,
     import time as _time
     from route_engine import livecams, liveservice
 
-    if not os.environ.get("TRIFFIE_DASH_DEVICE"):
+    if not os.environ.get("TRIFFY_DASH_DEVICE"):
         assert livecams.DASH_DEVICE == "cpu"
 
     calls = []
@@ -1157,7 +1157,7 @@ if __name__ == "__main__":
 def test_live_chat_engine_matches_the_surface_chatbrain_needs():
     """The live adapter must offer everything ChatBrain calls on the sim engine.
 
-    ChatBrain was written against TriffieEngine. LiveChatEngine exists so live
+    ChatBrain was written against TriffyEngine. LiveChatEngine exists so live
     London can reuse it rather than growing a second parser that drifts. That
     only holds while the two present the same surface, so this asserts it
     directly instead of waiting for an AttributeError mid-demo.
@@ -1166,7 +1166,7 @@ def test_live_chat_engine_matches_the_surface_chatbrain_needs():
     from route_engine.config import graph_path
     if not graph_path("lon").exists():
         pytest.skip("London graph not imported")
-    from route_engine.engine import TriffieEngine as _TE
+    from route_engine.engine import TriffyEngine as _TE
     from route_engine.live_chat import LiveChatEngine
     from route_engine.live_engine import LiveEngine
 
@@ -1451,7 +1451,7 @@ def test_validation_split_survives_a_collection_outage(tmp_path):
     On 19-20 Sep the laptop slept for 10.3 hours, so both cut points landed
     inside the hole, the tuning slice held ZERO pairs, and the fitter fell back
     to tau=inf / damp=0 - which IS persistence, term for term. The run then
-    published "Triffie beats persistence by -0.0%" to the file the dashboard
+    published "Triffy beats persistence by -0.0%" to the file the dashboard
     badges REAL DATA: a comparison of a thing with itself, reported as a result.
 
     Cutting at a quantile of the observations instead keeps every slice
@@ -1474,7 +1474,7 @@ def test_validation_split_survives_a_collection_outage(tmp_path):
 
     # NB tau == 1e9 is a legitimate grid value ("no decay"), not proof of the
     # fallback - the bug was the slice being EMPTY, which is what train_pairs
-    # measures. But if the fit does land on no-decay AND no-trend then Triffie
+    # measures. But if the fit does land on no-decay AND no-trend then Triffy
     # is persistence, and the report has to say so instead of printing a 0.0%
     # margin that reads like a tie.
     if out["tau_s"] >= 1e8 and out["trend_damping"] == 0.0:
@@ -1524,7 +1524,7 @@ def test_validation_scores_one_continuous_run_not_across_an_outage(tmp_path):
 def test_validation_refuses_to_publish_without_a_fitted_blend(tmp_path, capsys):
     """Too little data to fit must refuse, not quietly become persistence.
 
-    With tau=inf and damp=0 triffie_forecast reduces to persistence exactly, so
+    With tau=inf and damp=0 triffy_forecast reduces to persistence exactly, so
     the table would compare a thing with itself and print a headline that reads
     like a finding. There is no honest number in that case, so write none.
     """
@@ -1851,7 +1851,7 @@ def test_route_map_image_is_drawn_from_our_own_graph(tmp_path, eng):
     assert img is not None, "wrote a file that is not a readable image"
     assert img.shape[:2] == (1000, 1000)
 
-    # The route must actually be on it. Count pixels close to Triffie blue;
+    # The route must actually be on it. Count pixels close to Triffy blue;
     # a blank or mis-projected map fails here, which a file-size check misses.
     import numpy as np
     blue = np.abs(img.astype(int) - np.array(mapimg.ROUTE_BLUE)).sum(axis=2) < 60
@@ -1936,7 +1936,7 @@ def test_no_loopback_map_link_is_sent_to_a_remote_reader(eng):
     for base in ("http://127.0.0.1:8000", "http://localhost:8000",
                  "http://[::1]:8000", "http://0.0.0.0:8000"):
         assert _is_loopback(base), "%s is not reachable from another device" % base
-    for base in ("http://192.168.29.204:8000", "https://triffie.example.com"):
+    for base in ("http://192.168.29.204:8000", "https://triffy.example.com"):
         assert not _is_loopback(base)
 
     real = chat_mod.MAP_BASE
@@ -1957,7 +1957,7 @@ def test_no_loopback_map_link_is_sent_to_a_remote_reader(eng):
 
 
 def test_serving_on_the_network_fixes_the_map_links_too(monkeypatch):
-    """TRIFFIE_HOST alone must be enough; MAP_BASE should follow it.
+    """TRIFFY_HOST alone must be enough; MAP_BASE should follow it.
 
     Serving on the network while MAP_BASE stays at 127.0.0.1 is never what
     anyone wants - the dashboard becomes reachable from a phone while the chat
@@ -1973,9 +1973,9 @@ def test_serving_on_the_network_fixes_the_map_links_too(monkeypatch):
 
     # A deliberately-set base is left alone: a tunnel or hostname is a choice
     # someone made knowing more than we do.
-    monkeypatch.setattr(chat_mod, "MAP_BASE", "https://triffie.example.com")
+    monkeypatch.setattr(chat_mod, "MAP_BASE", "https://triffy.example.com")
     _point_map_links_at("192.168.1.50", 8000)
-    assert chat_mod.MAP_BASE == "https://triffie.example.com"
+    assert chat_mod.MAP_BASE == "https://triffy.example.com"
 
     # And an empty base stays off.
     monkeypatch.setattr(chat_mod, "MAP_BASE", "")

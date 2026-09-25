@@ -1,7 +1,7 @@
 """Draw a route as a picture, from our own road graph.
 
 **Why we draw this ourselves.** The obvious shortcut is a static-map API or a
-raster tile server. Both would mean the picture under a Triffie answer is
+raster tile server. Both would mean the picture under a Triffy answer is
 somebody else's rendering of somebody else's map, which is the same problem as
 linking to Google Maps directions: the image stops being evidence of what our
 router did. We already hold the entire road network in memory - every edge with
@@ -137,7 +137,7 @@ def _title_bar(img, plan, width: int) -> None:
           % (fmt_clock(plan.depart_s), round(r.median_s / 60),
              round(r.percentile_s(0.9) / 60), r.distance_m / 1000.0),
           (22, 64), 0.48, MUTED, 1)
-    _text(img, "Triffie", (width - 96, 34), 0.55, ROUTE_BLUE, 1)
+    _text(img, "Triffy", (width - 96, 34), 0.55, ROUTE_BLUE, 1)
 
 
 def _markers(img, proj, geom) -> None:
@@ -176,7 +176,7 @@ def _legend(img, width: int, height: int, has_alts: bool, has_baseline: bool) ->
     phone it is three coloured lines and no way to ask, and the purple one in
     particular means nothing unless we say so.
     """
-    rows = [(ROUTE_BLUE, "Triffie's route")]
+    rows = [(ROUTE_BLUE, "Triffy's route")]
     if has_alts:
         rows.append((ALT_GREY, "alternative"))
     if has_baseline:

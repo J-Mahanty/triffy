@@ -13,7 +13,7 @@
   "tau_s": 600,
   "trend_damping": 0.0,
   "results": {
-    "triffie": {
+    "triffy": {
       "n": 2145,
       "mae": 1.0563887749093517,
       "rmse": 1.4035273573934497,

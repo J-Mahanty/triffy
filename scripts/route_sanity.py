@@ -1,4 +1,4 @@
-"""Sanity-check Triffie's live London ETAs against an external reference.
+"""Sanity-check Triffy's live London ETAs against an external reference.
 
 **What this is, and what it is not.** OSRM's public demo server routes on the
 same OpenStreetMap data with fixed textbook speeds and *no traffic model at all*.
@@ -39,7 +39,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from route_engine.live_engine import LiveEngine
 
-UA = {"User-Agent": "Triffie-DesignThinkingLab/0.1 (academic prototype)"}
+UA = {"User-Agent": "Triffy-DesignThinkingLab/0.1 (academic prototype)"}
 OSRM = "https://router.project-osrm.org/route/v1/driving/%f,%f;%f,%f"
 
 # Central-London pairs a Londoner would actually name, spread across the extract
@@ -163,7 +163,7 @@ def main() -> None:
 
     print()
     print("=" * 96)
-    print("SUMMARY  (T = Triffie live, O = OSRM free-flow reference)")
+    print("SUMMARY  (T = Triffy live, O = OSRM free-flow reference)")
     print("=" * 96)
     print("  distance ratio T/O   median %.2f   range %.2f-%.2f"
           % (statistics.median(dist_ratios), min(dist_ratios), max(dist_ratios)))

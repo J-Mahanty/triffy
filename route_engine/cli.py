@@ -12,7 +12,7 @@ import re
 import sys
 
 from .chat import ChatBrain
-from .engine import TriffieEngine
+from .engine import TriffyEngine
 
 # Minimal ANSI styling. Discord markdown does not survive in a terminal, so we
 # translate the few markers the brain emits.
@@ -64,7 +64,7 @@ BANNER = r"""
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Triffie terminal client")
+    ap = argparse.ArgumentParser(description="Triffy terminal client")
     ap.add_argument("--user", default="guest")
     ap.add_argument("--clock", default="18:30")
     ap.add_argument("--live", action="store_true",
@@ -96,7 +96,7 @@ def main() -> None:
                   % (eng.net.meta.get("label", ""), eng.clock,
                      len(live.observations), len(live.mapped)))
     else:
-        eng = TriffieEngine(start_clock=args.clock)
+        eng = TriffyEngine(start_clock=args.clock)
         banner = ("Network: **%s** | clock **%s** | %d cameras simulated\n"
                   % (eng.net.meta.get("label", ""), eng.clock,
                      len(eng.cams.cams)))

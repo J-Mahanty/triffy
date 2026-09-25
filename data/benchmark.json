@@ -1,6 +1,6 @@
 {
   "stats": {
-    "triffie": {
+    "triffy": {
       "n": 480,
       "mean_travel_min": 18.659888760605963,
       "median_travel_min": 16.6584475050667,
@@ -56,7 +56,7 @@
     "disrupted": {
       "n": 93,
       "stats": {
-        "triffie": {
+        "triffy": {
           "n": 93,
           "mean_travel_min": 22.328424065996774,
           "median_travel_min": 18.696437065026718,
@@ -97,7 +97,7 @@
     "clear": {
       "n": 387,
       "stats": {
-        "triffie": {
+        "triffy": {
           "n": 387,
           "mean_travel_min": 17.77830275698492,
           "median_travel_min": 15.95741305289727,

@@ -1,4 +1,4 @@
-"""Central configuration for Triffie.
+"""Central configuration for Triffy.
 
 Everything tunable lives here so the demo can be re-pointed at a new city or
 re-tuned live in front of an audience without hunting through modules.
@@ -48,7 +48,7 @@ CITIES: dict[str, CityBox] = {
                    51.4850, -0.1650, 51.5400, -0.0600),
 }
 
-ACTIVE_CITY = os.environ.get("TRIFFIE_CITY", "kol")
+ACTIVE_CITY = os.environ.get("TRIFFY_CITY", "kol")
 
 # Where the dashboard is reachable, for the "see it on the map" link the chat
 # puts under a route. The default is the demo laptop's own server.
@@ -57,7 +57,7 @@ ACTIVE_CITY = os.environ.get("TRIFFIE_CITY", "kol")
 # not sitting at this machine - a Telegram user on a phone cannot open
 # 127.0.0.1. Set it to "" to turn the link off entirely, which is the right
 # thing when nothing is serving the dashboard.
-MAP_BASE = os.environ.get("TRIFFIE_MAP_BASE", "http://127.0.0.1:8000").rstrip("/")
+MAP_BASE = os.environ.get("TRIFFY_MAP_BASE", "http://127.0.0.1:8000").rstrip("/")
 
 
 def city() -> CityBox:
@@ -104,7 +104,7 @@ MAX_SIGNAL_DELAY_S = 95.0
 # ---------------------------------------------------------------------------
 # Nowcast / forecast
 # ---------------------------------------------------------------------------
-CAM_COVERAGE = float(os.environ.get("TRIFFIE_CAM_COVERAGE", "0.18"))  # frac of edges with a cam
+CAM_COVERAGE = float(os.environ.get("TRIFFY_CAM_COVERAGE", "0.18"))  # frac of edges with a cam
 CAM_SPEED_NOISE = 0.09        # relative sigma of a camera-derived speed estimate
 PROPAGATION_HOPS = 3          # how far a cam observation is allowed to inform neighbours
 # Sharp decay matters more than it looks. With a slow decay an edge adjacent to

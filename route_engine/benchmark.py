@@ -1,4 +1,4 @@
-"""Head-to-head evaluation: does Triffie actually route better?
+"""Head-to-head evaluation: does Triffy actually route better?
 
 **What this does and does not claim.** We cannot prove anything about Google
 Maps or Waze here; we have no access to their routing, and a fair comparison
@@ -8,7 +8,7 @@ under identical conditions.
 
 Three routers compete:
 
-* ``triffie``    - time-dependent forecast, live camera nowcast, risk-aware cost
+* ``triffy``    - time-dependent forecast, live camera nowcast, risk-aware cost
 * ``snapshot``   - live speeds frozen at departure, the standard "live traffic"
                    approach: it knows current conditions but has no forward model
 * ``historical`` - typical-day profiles, no live data at all
@@ -37,7 +37,7 @@ from dataclasses import dataclass, field
 import numpy as np
 
 from .config import DATA
-from .engine import TriffieEngine
+from .engine import TriffyEngine
 from .router import Router
 from .simulator import fmt_clock
 
@@ -63,11 +63,11 @@ class TripResult:
         return self.actual_s <= self.promised_p90_s
 
 
-METHODS = ("triffie", "snapshot", "historical")
+METHODS = ("triffy", "snapshot", "historical")
 
 
 class Benchmark:
-    def __init__(self, engine: TriffieEngine, seed: int = 99):
+    def __init__(self, engine: TriffyEngine, seed: int = 99):
         self.eng = engine
         self.rng = np.random.default_rng(seed)
         self.results: list[TripResult] = []
@@ -126,10 +126,10 @@ class Benchmark:
         out = {}
 
         # The snapshot baseline plans on data that is deliberately ``lag`` old:
-        # see TriffieEngine.state_at_lag for why that is the fair setting.
+        # see TriffyEngine.state_at_lag for why that is the fair setting.
         stale = eng.state_at_lag(eng.baseline_lag_s)
         profiles = {
-            "triffie": eng.forecaster.build_profile(eng.state, depart_s),
+            "triffy": eng.forecaster.build_profile(eng.state, depart_s),
             "snapshot": eng.forecaster.snapshot_profile(stale, depart_s),
             "historical": eng.forecaster.historical_only_profile(depart_s),
         }
@@ -242,7 +242,7 @@ class Benchmark:
 
     def summarise(self) -> dict:
         by = {m: [r for r in self.results if r.method == m] for m in METHODS}
-        n = len(by["triffie"])
+        n = len(by["triffy"])
         if n == 0:
             return {}
 
@@ -267,8 +267,8 @@ class Benchmark:
         pairs = {}
         for rival in ("snapshot", "historical"):
             deltas, wins, ties = [], 0, 0
-            for a, b in zip(by["triffie"], by[rival]):
-                d = b.actual_s - a.actual_s          # positive = Triffie faster
+            for a, b in zip(by["triffy"], by[rival]):
+                d = b.actual_s - a.actual_s          # positive = Triffy faster
                 deltas.append(d)
                 if d > 20:
                     wins += 1
@@ -284,7 +284,7 @@ class Benchmark:
                 "tie_pct": 100.0 * ties / tot,
                 "loss_pct": 100.0 * (tot - wins - ties) / tot,
                 "eta_error_reduction_pct": 100.0 * (
-                    1.0 - stats["triffie"]["mean_abs_eta_error_min"] /
+                    1.0 - stats["triffy"]["mean_abs_eta_error_min"] /
                     max(1e-9, stats[rival]["mean_abs_eta_error_min"])),
             }
 
@@ -294,11 +294,11 @@ class Benchmark:
         subgroups = {}
         for tag, want in (("disrupted", True), ("clear", False)):
             sel = {m: [r for r in by[m] if r.disrupted == want] for m in METHODS}
-            if len(sel["triffie"]) < 5:
+            if len(sel["triffy"]) < 5:
                 continue
-            g = {"n": len(sel["triffie"]), "stats": {m: agg(sel[m]) for m in METHODS}}
+            g = {"n": len(sel["triffy"]), "stats": {m: agg(sel[m]) for m in METHODS}}
             deltas = [b.actual_s - a.actual_s
-                      for a, b in zip(sel["triffie"], sel["snapshot"])]
+                      for a, b in zip(sel["triffy"], sel["snapshot"])]
             tot = max(1, len(deltas))
             g["vs_snapshot"] = {
                 "mean_saving_min": statistics.mean(deltas) / 60.0,
@@ -322,7 +322,7 @@ class Benchmark:
         s, p = summary["stats"], summary["pairs"]
         L = []
         L.append("=" * 74)
-        L.append("TRIFFIE BENCHMARK  -  %s" % summary["city"])
+        L.append("TRIFFY BENCHMARK  -  %s" % summary["city"])
         L.append("%d trips  |  %d cameras  |  %d directed edges"
                  % (summary["n_trips"], summary["cameras"], summary["edges"]))
         L.append("=" * 74)
@@ -345,7 +345,7 @@ class Benchmark:
         L.append("PAIRED COMPARISON (same trip, same departure, same world)")
         L.append("-" * 74)
         for rival, d in p.items():
-            L.append("  Triffie vs %s:" % rival)
+            L.append("  Triffy vs %s:" % rival)
             L.append("    travel time saved   %+6.2f min/trip  (%+.1f%%)"
                      % (d["mean_saving_min"], d["pct_saving"]))
             L.append("    ETA error reduced   %5.1f%%" % d["eta_error_reduction_pct"])
@@ -354,7 +354,7 @@ class Benchmark:
         sg = summary.get("subgroups", {})
         if sg:
             L.append("")
-            L.append("WHERE THE VALUE IS  (Triffie vs snapshot, by trip type)")
+            L.append("WHERE THE VALUE IS  (Triffy vs snapshot, by trip type)")
             L.append("-" * 74)
             names = {"disrupted": "corridor had a live incident",
                      "clear": "network clear on this corridor"}
@@ -379,17 +379,17 @@ class Benchmark:
         L.append("    claim about their real-world performance is made here.")
         L.append("  * Baseline plans on data lagged by %d s, modelling floating-car GPS"
                  % round(summary.get("baseline_lag_s", 0)))
-        L.append("    aggregation latency. Triffie uses camera data at zero lag.")
+        L.append("    aggregation latency. Triffy uses camera data at zero lag.")
         L.append("  * All routers are scored by driving their chosen route through the")
         L.append("    same simulated world, never against their own estimate.")
-        L.append("  * Triffie's historical model carries a per-edge bias, so it does")
+        L.append("  * Triffy's historical model carries a per-edge bias, so it does")
         L.append("    not secretly know the simulator's ground truth.")
         L.append("=" * 74)
         return "\n".join(L)
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Benchmark Triffie against baselines")
+    ap = argparse.ArgumentParser(description="Benchmark Triffy against baselines")
     ap.add_argument("--trips", type=int, default=180)
     ap.add_argument("--user", default="guest")
     ap.add_argument("--seed", type=int, default=99)
@@ -397,7 +397,7 @@ def main() -> None:
     args = ap.parse_args()
 
     print("Booting engine...")
-    eng = TriffieEngine()
+    eng = TriffyEngine()
     bm = Benchmark(eng, seed=args.seed)
     print("Running %d trips across the day..." % args.trips)
     summary = bm.run(n_trips=args.trips, user_id=args.user)

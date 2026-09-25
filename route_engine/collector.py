@@ -2,7 +2,7 @@
 
 Runs in the background for hours or days, sampling real traffic cameras and
 recording what our own computer vision measures. The output is the evidence base
-that makes Triffie's claims checkable rather than asserted:
+that makes Triffy's claims checkable rather than asserted:
 
 * a genuine time series of genuine traffic, gathered by us,
 * against which ``validate.py`` scores real forecasts of real conditions.

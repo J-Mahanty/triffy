@@ -5,7 +5,7 @@ the benchmark honest:
 
 1. It is the *world*. It decides the real speed on every edge at every instant.
    Cameras observe it noisily and sparsely; the router never sees it directly.
-2. It is the *referee*. When we compare Triffie against a baseline router, both
+2. It is the *referee*. When we compare Triffy against a baseline router, both
    routes are driven through this same world, so the comparison measures routing
    quality rather than luck.
 
@@ -389,7 +389,7 @@ class TrafficSim:
 def historical_profile(sim: TrafficSim, t_s: float) -> np.ndarray:
     """What a model trained on weeks of clean history would expect right now.
 
-    Deliberately incident-free: history averages incidents out. Triffie's edge
+    Deliberately incident-free: history averages incidents out. Triffy's edge
     over a purely historical model is that cameras reveal *today's* anomaly.
     """
     return sim.speeds(t_s, with_incidents=False)

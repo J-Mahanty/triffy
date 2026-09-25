@@ -1,6 +1,6 @@
 """Real live traffic cameras.
 
-This module is what stops Triffie being a simulation with a map on top.
+This module is what stops Triffy being a simulation with a map on top.
 
 Transport for London publishes ~890 roadside traffic cameras ("JamCams") as
 open data: a still image and a short video clip per camera, refreshed every few
@@ -37,7 +37,7 @@ import requests
 from .cams import CamObservation
 from .config import DATA
 
-UA = {"User-Agent": "Triffie-DesignThinkingLab/0.1 (academic prototype)"}
+UA = {"User-Agent": "Triffy-DesignThinkingLab/0.1 (academic prototype)"}
 TFL_REGISTRY = "https://api.tfl.gov.uk/Place/Type/JamCam"
 REGISTRY_CACHE = DATA / "livecam_registry.json"
 LIVE_DIR = DATA / "live"
@@ -317,7 +317,7 @@ class LiveCameraReader:
 # single stills on the CPU (tens of ms for yolo11n at this resolution) with one
 # shared model and one inference at a time: ultralytics' predict() is not
 # thread-safe, and a stuck CUDA call cannot be timed out from Python anyway.
-DASH_DEVICE = os.environ.get("TRIFFIE_DASH_DEVICE", "cpu")
+DASH_DEVICE = os.environ.get("TRIFFY_DASH_DEVICE", "cpu")
 _DASH_MODELS: dict = {}
 _DASH_MODEL_LOCK = threading.Lock()
 _DASH_INFER_LOCK = threading.Lock()

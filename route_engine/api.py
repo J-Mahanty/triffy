@@ -1,4 +1,4 @@
-"""FastAPI backend for the Triffie dashboard and bots.
+"""FastAPI backend for the Triffy dashboard and bots.
 
 A deliberate split in the wire format keeps the live demo smooth: road
 *geometry* never changes, so it is fetched once from ``/api/network`` (a few MB),
@@ -25,21 +25,21 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from .config import DATA, WEB
-from .engine import TriffieEngine
+from .engine import TriffyEngine
 from .simulator import fmt_clock
 
-app = FastAPI(title="Triffie", version="0.1")
+app = FastAPI(title="Triffy", version="0.1")
 
 CAMERA_UNAVAILABLE = "camera feed unavailable"
 LIVE_UNAVAILABLE = "live mode unavailable: %s"
-ENGINE: TriffieEngine | None = None
+ENGINE: TriffyEngine | None = None
 LIVE = None
 
 
-def engine() -> TriffieEngine:
+def engine() -> TriffyEngine:
     global ENGINE
     if ENGINE is None:
-        ENGINE = TriffieEngine()
+        ENGINE = TriffyEngine()
     return ENGINE
 
 
@@ -429,7 +429,7 @@ def index():
     if not page.exists():
         # The dashboard is a separate piece of the project; the API works
         # without it, so say where things are rather than failing with a 500.
-        return JSONResponse({"service": "triffie",
+        return JSONResponse({"service": "triffy",
                              "dashboard": "not installed (expected web/index.html)",
                              "docs": "/docs"})
     return FileResponse(str(page))
@@ -439,7 +439,7 @@ if WEB.exists():
     app.mount("/static", StaticFiles(directory=str(WEB)), name="static")
 
 
-READONLY = os.environ.get("TRIFFIE_READONLY", "").strip() in ("1", "true", "yes")
+READONLY = os.environ.get("TRIFFY_READONLY", "").strip() in ("1", "true", "yes")
 """Viewer mode: serve the dashboard, refuse anything that changes shared state.
 
 This API was written for loopback, where every caller is the person presenting.
@@ -531,7 +531,7 @@ def _loopback_sockets(port: int) -> list:
     Two explicit loopback sockets rather than binding "::" or "0.0.0.0": those
     would also publish the dashboard, and the live camera feeds, to every
     machine on whatever network the demo laptop is joined to. Set
-    TRIFFIE_HOST to do that deliberately (see main), not by accident.
+    TRIFFY_HOST to do that deliberately (see main), not by accident.
     """
     socks = []
     for family, addr in ((socket.AF_INET, ("127.0.0.1", port)),
@@ -557,10 +557,10 @@ def main() -> None:
     import uvicorn
     engine()  # boot before serving so the first request is fast
 
-    port = int(os.environ.get("TRIFFIE_PORT", "8000"))
-    host = os.environ.get("TRIFFIE_HOST", "").strip()
+    port = int(os.environ.get("TRIFFY_PORT", "8000"))
+    host = os.environ.get("TRIFFY_HOST", "").strip()
     if host:
-        # Deliberate exposure, e.g. TRIFFIE_HOST=0.0.0.0 so a phone on the same
+        # Deliberate exposure, e.g. TRIFFY_HOST=0.0.0.0 so a phone on the same
         # wi-fi can open the map links the chat sends. Say it out loud, because
         # it also exposes the live camera feeds to that network.
         print("Serving on %s:%d — reachable from this network." % (host, port),
@@ -581,7 +581,7 @@ def main() -> None:
     socks = _loopback_sockets(port)
     if not socks:
         raise SystemExit("Nothing could listen on port %d — is it already in "
-                         "use? Try TRIFFIE_PORT=8001." % port)
+                         "use? Try TRIFFY_PORT=8001." % port)
     print("Dashboard: http://localhost:%d  and  http://127.0.0.1:%d"
           % (port, port), flush=True)
     uvicorn.Server(uvicorn.Config(app, log_level="warning")).run(sockets=socks)

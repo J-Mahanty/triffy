@@ -1,6 +1,6 @@
 """Let the chat brain answer from live London as well as simulated Kolkata.
 
-``ChatBrain`` was written against ``TriffieEngine``: a ``plan()`` that returns a
+``ChatBrain`` was written against ``TriffyEngine``: a ``plan()`` that returns a
 ``Plan``, a clock, a ``leave_by`` search and network statistics. Rather than a
 second brain that would drift from the first, this adapter gives the real-data
 ``LiveEngine`` that same surface. Three things genuinely differ:
@@ -33,7 +33,7 @@ LEANS_ON_HISTORY_S = 3600.0     # beyond this the usual pattern dominates
 
 
 class LiveChatEngine:
-    """``TriffieEngine``'s chat-facing surface, answered from real cameras."""
+    """``TriffyEngine``'s chat-facing surface, answered from real cameras."""
 
     is_live = True
 
