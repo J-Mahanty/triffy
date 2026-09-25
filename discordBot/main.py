@@ -138,6 +138,13 @@ async def route(ctx):
         if plan.advisory:
             lines += ["", f"_{plan.advisory}_"]
 
+        if r.steps:
+            lines += ["", "**Turn-by-turn:**"]
+            lines += [
+                f"{i}. {s.instruction} ({round(s.distance_m)} m)"
+                for i, s in enumerate(r.steps, start=1)
+            ]
+        
         if len(plan.routes) > 1:
             alt_lines = []
             for alt in plan.routes[1:]:
