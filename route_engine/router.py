@@ -51,6 +51,27 @@ def traffic_level(speed_ratio: float) -> int:
     return sum(congestion >= b for b in TRAFFIC_BANDS)
 
 
+def _traffic_runs(net: RoadNetwork, edges, ratios) -> list:
+    """The route as consecutive runs of one traffic level, each a single line.
+
+    ``n`` is how many edges a run covers, so the runs can be checked against
+    the route they came from.
+    """
+    if not ratios or len(ratios) != len(edges):
+        return []
+    runs: list[dict] = []
+    for e, ratio in zip(edges, ratios):
+        level = traffic_level(ratio)
+        g = net.egeom[e]
+        if runs and runs[-1]["level"] == level:
+            pts = runs[-1]["g"]
+            pts.extend(g[1:] if pts[-1] == g[0] else g)
+            runs[-1]["n"] += 1
+        else:
+            runs.append({"level": level, "n": 1, "g": list(g)})
+    return runs
+
+
 @dataclass
 class Step:
     """One human-readable instruction."""
@@ -151,6 +172,10 @@ class Route:
             "steps": [s.as_dict() for s in self.steps],
             "geometry": self.geometry(net),
             "roads": _main_roads(net, self.edges),
+            # The route in runs of similar traffic, for colouring it along its
+            # length as map apps do - but by the traffic expected when you get
+            # to each stretch, not the traffic there now.
+            "traffic": _traffic_runs(net, self.edges, self.speed_ratio),
         }
 
 

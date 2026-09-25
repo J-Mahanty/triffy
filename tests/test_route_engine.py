@@ -150,6 +150,21 @@ def test_routes_record_predicted_speed_per_edge(eng):
         assert all(0.0 < x <= 1.06 for x in r.speed_ratio)
 
 
+def test_route_traffic_runs_are_the_whole_route(eng):
+    """The coloured runs cover every edge, in order, end to end."""
+    plan = eng.plan("Park Circus", "BBD Bagh", user_id="exec", k=3)
+    for r in plan.routes:
+        d = r.as_dict(eng.net)
+        runs = d["traffic"]
+        assert runs, "every route should carry traffic runs"
+        assert sum(x["n"] for x in runs) == d["n_edges"]
+        assert all(x["level"] in (0, 1, 2, 3) for x in runs)
+        # Neighbouring runs differ, or they would have been merged.
+        assert all(a["level"] != b["level"] for a, b in zip(runs, runs[1:]))
+        assert list(runs[0]["g"][0]) == list(d["geometry"][0])
+        assert list(runs[-1]["g"][-1]) == list(d["geometry"][-1])
+
+
 def test_eta_distribution_is_ordered(eng):
     plan = eng.plan("Sealdah", "Victoria Memorial", user_id="rider")
     r = plan.best
