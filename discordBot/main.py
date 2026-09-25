@@ -45,6 +45,18 @@ async def on_ready():
             start_clock = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M"),
         )
         print(f"Engine ready — {engine.city} @ {engine.clock}")
+        try:
+                channel = await client.fetch_channel(channel_id)
+                await channel.send(f"Engine ready — {engine.city} @ {engine.clock}")
+        except Exception:
+            pass
+        except Exception as e:
+            print(f"Engine failed to load: {e}")
+            try:
+                channel = await client.fetch_channel(channel_id)
+                await channel.send(f"Engine failed to load: `{e}`")
+            except Exception:
+                pass
 
 
 @client.event
@@ -158,6 +170,7 @@ async def route(ctx):
 
     except asyncio.TimeoutError:
         await ctx.send("You took too long to respond. Please use !route again.")
+
 
 @client.event
 # Error Handling
