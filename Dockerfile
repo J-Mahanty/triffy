@@ -13,7 +13,9 @@ COPY requirements.txt .
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the bot source code
+
 COPY discordBot/ ./discordBot/
+COPY route_engine/ ./route_engine/
+COPY data/ ./data/
 
 CMD ["python", "discordBot/main.py"]
