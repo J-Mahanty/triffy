@@ -85,21 +85,6 @@ label{display:block;font-size:11.5px;font-weight:600;color:var(--ink-soft);margi
 .pulse-dot{animation:blip 1.6s ease-in-out infinite;}
 @keyframes blip{0%,100%{opacity:.35;}50%{opacity:1;}}
 
-.cams-wrap{flex:1;min-height:380px;padding:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;overflow-y:auto;}
-.cam-thumb{border:1px solid var(--line);border-radius:12px;overflow:hidden;cursor:pointer;background:var(--em-950);position:relative;aspect-ratio:16/10;}
-.cam-thumb.active{outline:2px solid var(--em-500);}
-.cam-strip{position:absolute;inset:0;overflow:hidden;}
-.car{position:absolute;bottom:38%;width:12px;height:6px;border-radius:2px;background:var(--em-500);animation:drive linear infinite;}
-@keyframes drive{from{left:-14px;}to{left:110%;}}
-.cam-name{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);color:#fff;font-size:10.5px;
-  padding:5px 8px;display:flex;justify-content:space-between;}
-.cam-live{position:absolute;top:7px;left:7px;background:rgba(0,0,0,.5);color:#fff;font-size:9.5px;font-weight:700;
-  padding:3px 7px;border-radius:100px;display:flex;align-items:center;gap:4px;}
-.cam-live .d{width:5px;height:5px;border-radius:50%;background:var(--red);animation:blip 1.4s infinite;}
-.feed-detail{grid-column:1/-1;border:1px solid var(--line);border-radius:12px;padding:12px;background:var(--em-50);display:none;}
-.feed-detail.on{display:block;}
-.feed-detail .stat-row{grid-template-columns:repeat(4,1fr);}
-@media (max-width:520px){.cams-wrap{grid-template-columns:1fr;} .feed-detail .stat-row{grid-template-columns:1fr 1fr;}}
 
 .robot-corner{position:fixed;right:20px;bottom:20px;display:flex;align-items:flex-end;gap:10px;z-index:50;}
 .speech{max-width:210px;background:var(--em-900);color:#fff;font-size:12px;line-height:1.4;padding:10px 12px;
@@ -157,7 +142,6 @@ footer.attrib{text-align:center;font-size:11px;color:var(--ink-soft);padding:0 0
     <div class="map-head">
       <div class="panel-tabs">
         <button class="ptab on" id="tab-heat" onclick="showPanel('heat')">Traffic heatmap</button>
-        <button class="ptab" id="tab-cams" onclick="showPanel('cams')">Live cam feeds</button>
       </div>
       <div class="legend" id="heat-legend">
         <span><i class="sw" style="background:var(--em-500)"></i>Free</span>
@@ -166,7 +150,6 @@ footer.attrib{text-align:center;font-size:11px;color:var(--ink-soft);padding:0 0
       </div>
     </div>
     <div class="heat-wrap" id="panel-heat"><svg id="heatsvg" viewBox="0 0 600 420"></svg></div>
-    <div class="cams-wrap" id="panel-cams" style="display:none;"></div>
   </div>
 </div>
 
@@ -180,9 +163,9 @@ footer.attrib{text-align:center;font-size:11px;color:var(--ink-soft);padding:0 0
 <script>
 /* ---------- Triffie API layer ---------- */
 /* Talks to the same Triffie backend contract as the full app (/api/plan, /api/live/plan,
-   /api/state, /api/live/state, /api/livecams, /api/livecam/{id}/clip[/stream]) when this
-   page is served from that backend's origin. If no backend answers, every call below
-   fails fast and the UI falls back to the built-in simulator so the screen still works. */
+   /api/state, /api/live/state) when this page is served from that backend's origin.
+   If no backend answers, every call below fails fast and the UI falls back to the
+   built-in simulator so the screen still works. */
 const API = "";
 let API_LIVE = false;
 let FORCE_DEMO = false;   // user-controlled "Use synthesized data" switch
@@ -217,7 +200,7 @@ function setConn(live, manual){
 }
 async function checkApi(){
   if(FORCE_DEMO){ setConn(false, true); return; }
-  try{ await apiGet('/api/livecams'); setConn(true); }
+  try{ await apiGet('/api/state'); setConn(true); }
   catch(e){ setConn(false); }
 }
 checkApi();
@@ -230,7 +213,6 @@ function toggleDemoMode(on){
   if(on){
     setConn(false, true);
     drawHeatmap(Date.now());              // redraw heatmap with pure demo data
-    if(document.getElementById('panel-cams').style.display !== 'none') buildCams(); // rebuild cam list as demo
   } else {
     checkApi();
   }
@@ -250,7 +232,6 @@ const TIPS = [
   "Pro tip: leaving 10 minutes earlier beats almost every shortcut.",
   "Heavy traffic ahead is just light traffic that hasn't moved yet.",
   "I'm not stuck in traffic — I *am* the traffic. (I'm kidding, I'm a robot.)",
-  "Tap a camera tile to watch a simulated live feed.",
   "Green roads are happy roads. Red roads need a hug and a detour.",
   "Beep boop. Safe travels, human."
 ];
@@ -399,97 +380,8 @@ setInterval(()=>{ API_LIVE ? refreshHeatmapFromApi() : drawHeatmap(Date.now()); 
 /* ---------- panel toggle ---------- */
 function showPanel(which){
   document.getElementById('tab-heat').classList.toggle('on', which==='heat');
-  document.getElementById('tab-cams').classList.toggle('on', which==='cams');
   document.getElementById('panel-heat').style.display = which==='heat' ? '' : 'none';
-  document.getElementById('panel-cams').style.display = which==='cams' ? 'grid' : 'none';
   document.getElementById('heat-legend').style.display = which==='heat' ? 'flex' : 'none';
-  if(which==='cams' && !CAMS.length) buildCams();
-}
-
-/* ---------- simulated live cams ---------- */
-const CAM_NAMES = ["Sector 5 Junction","Park Circus Flyover","Howrah Bridge East","Ultadanam Crossing",
-  "Ring Road North","Diamond Harbour Rd","College St Corner","Bypass Toll Plaza"];
-let CAMS = [];
-async function buildCams(){
-  const wrap = document.getElementById('panel-cams');
-  wrap.innerHTML = `<div class="empty-hint" style="grid-column:1/-1;">Loading cameras…</div>`;
-  try{
-    const data = await apiGet('/api/livecams');
-    setConn(true);
-    CAMS = (data.cameras||[]).map((c,i)=>({id:c.id, name:c.name, real:true, veh:'–', moving:'–'}));
-    if(!CAMS.length) throw new Error('empty');
-  }catch(e){
-    setConn(false, FORCE_DEMO);
-    CAMS = CAM_NAMES.map((name,i)=>({id:i, name, real:false, veh:4+Math.floor(Math.random()*10), moving:50+Math.floor(Math.random()*45)}));
-  }
-  wrap.innerHTML = CAMS.map(c=>`
-    <div class="cam-thumb" id="cam-${c.id}" onclick="watchCam('${c.id}')">
-      <div class="cam-live"><span class="d"></span>LIVE</div>
-      <div class="cam-strip">${[0,1,2].map(k=>`<div class="car" style="top:${30+k*14}%;animation-duration:${3+Math.random()*3}s;animation-delay:${(Math.random()*3).toFixed(1)}s;"></div>`).join('')}</div>
-      <div class="cam-name"><span>${c.name}</span><span>${c.real?'':((c.veh)+' veh')}</span></div>
-    </div>`).join('') + `<div class="feed-detail" id="feed-detail"></div>`;
-}
-function renderDemoFeed(c, note){
-  const det = document.getElementById('feed-detail');
-  if(!c.veh || c.veh==='–') c.veh = 4+Math.floor(Math.random()*10);
-  if(!c.moving || c.moving==='–') c.moving = 50+Math.floor(Math.random()*45);
-  det.innerHTML = `<div style="font-weight:700;font-size:13.5px;margin-bottom:8px;">${c.name} — ${note||'live feed (synthesized)'}</div>
-    <div class="stat-row">
-      <div class="stat"><div class="l">Vehicles</div><div class="v" id="fv">${c.veh}</div></div>
-      <div class="stat"><div class="l">Moving</div><div class="v" id="fm">${c.moving}%</div></div>
-      <div class="stat"><div class="l">Status</div><div class="v">Streaming</div></div>
-      <div class="stat"><div class="l">Updated</div><div class="v" id="fu">just now</div></div>
-    </div>`;
-  clearInterval(window._camPoll);
-  window._camPoll = setInterval(()=>{
-    document.getElementById('fv').textContent = Math.max(1, c.veh + Math.floor(Math.random()*5-2));
-    document.getElementById('fm').textContent = Math.min(99, Math.max(10, c.moving + Math.floor(Math.random()*10-5))) + '%';
-    document.getElementById('fu').textContent = 'just now';
-  }, 2000);
-}
-function watchCam(id){
-  document.querySelectorAll('.cam-thumb').forEach(el=>el.classList.remove('active'));
-  document.getElementById('cam-'+id).classList.add('active');
-  const c = CAMS.find(x=>String(x.id)===String(id));
-  const det = document.getElementById('feed-detail');
-  det.classList.add('on');
-  clearInterval(window._camPoll);
-
-  if(c.real && !FORCE_DEMO){
-    det.innerHTML = `<div style="font-weight:700;font-size:13.5px;margin-bottom:8px;">${c.name} — live feed</div>
-      <img id="camImg" style="width:100%;border-radius:8px;margin-bottom:10px;display:block;background:#06231b;" alt="${c.name} camera clip">
-      <div class="stat-row">
-        <div class="stat"><div class="l">Vehicles</div><div class="v" id="fv">–</div></div>
-        <div class="stat"><div class="l">Moving</div><div class="v" id="fm">–</div></div>
-        <div class="stat"><div class="l">Status</div><div class="v" id="fs">starting…</div></div>
-        <div class="stat"><div class="l">Clip age</div><div class="v" id="fu">–</div></div>
-      </div>`;
-    const img = document.getElementById('camImg');
-    img.src = '/api/livecam/' + encodeURIComponent(id) + '/clip/stream?t=' + Date.now();
-    // if the real clip image can't load, drop straight into the synthesized feed for this camera
-    img.onerror = () => { renderDemoFeed(c, 'live feed (synthesized — stream unavailable)'); };
-    let failCount = 0;
-    const poll = async () => {
-      try{
-        const s = await apiGet('/api/livecam/' + encodeURIComponent(id) + '/clip');
-        document.getElementById('fs').textContent = s.state || '–';
-        document.getElementById('fu').textContent = s.clip_age_s!=null ? s.clip_age_s+' s' : '–';
-        if(s.summary && s.summary.vehicles_mean!=null){
-          document.getElementById('fv').textContent = s.summary.vehicles_mean;
-          document.getElementById('fm').textContent = s.summary.moving_pct_collector_rule + '%';
-        }
-        if(s.state === 'error') throw new Error('camera reported error');
-      }catch(e){
-        failCount++;
-        // a couple of failed polls (or a forced-demo toggle) drop this camera into synthesized mode
-        if(failCount>=2 || FORCE_DEMO){ clearInterval(window._camPoll); renderDemoFeed(c, 'live feed (synthesized — API unreachable)'); }
-      }
-    };
-    poll(); window._camPoll = setInterval(poll, 2000);
-    return;
-  }
-
-  renderDemoFeed(c, FORCE_DEMO ? 'live feed (synthesized — demo mode on)' : 'live feed (demo)');
 }
 
 /* ---------- confetti gimmick ---------- */
