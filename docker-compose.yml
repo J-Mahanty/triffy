@@ -3,11 +3,12 @@ services:
     build: .
     ports:
       - "${APP_PORT}:35000"
-    env_file:
-      - stack.env
     environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
+      - SERVER_BOT_TOKEN
+      - CHANNEL_ID
+      - APP_PORT
+      - REDIS_HOST
+      - REDIS_PORT
 
   redis:
     image: redis:alpine
