@@ -1,0 +1,42 @@
+{
+  "horizon_min": 20.0,
+  "span_hours": 9.455615387294028,
+  "covered_hours": 9.455615387294028,
+  "largest_gap_hours": 0.0,
+  "collection_runs": 3,
+  "cropped_to_longest_run": true,
+  "excluded_hours": 18.812449091010624,
+  "observations": 11809,
+  "cameras": 200,
+  "train_pairs": 629,
+  "test_pairs": 2145,
+  "tau_s": 600,
+  "trend_damping": 0.0,
+  "results": {
+    "triffy": {
+      "n": 2145,
+      "mae": 1.0563887749093517,
+      "rmse": 1.4035273573934497,
+      "mape": 56.62172259943292,
+      "median_ae": 0.8679412569277518
+    },
+    "persistence": {
+      "n": 2145,
+      "mae": 1.2875174825174824,
+      "rmse": 1.7892096775940685,
+      "mape": 62.74952969630938,
+      "median_ae": 0.95
+    },
+    "historical": {
+      "n": 2145,
+      "mae": 1.076931797870624,
+      "rmse": 1.4363747716469049,
+      "mape": 58.28626460756933,
+      "median_ae": 0.8725806451612903
+    }
+  },
+  "source": "C:\\Armageddon\\Triffie\\data\\live_observations.jsonl",
+  "from_collector": true,
+  "generated_at": 1789914447.4429398,
+  "generated_at_local": "2026-09-20 19:57:27"
+}

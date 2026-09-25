@@ -1,0 +1,143 @@
+{
+  "stats": {
+    "triffy": {
+      "n": 480,
+      "mean_travel_min": 18.659888760605963,
+      "median_travel_min": 16.6584475050667,
+      "mean_abs_eta_error_min": 1.021729457646081,
+      "median_abs_eta_error_min": 0.8896052427171829,
+      "eta_bias_min": -0.3193380213698899,
+      "on_time_pct": 82.91666666666667,
+      "mean_km": 4.277845625
+    },
+    "snapshot": {
+      "n": 480,
+      "mean_travel_min": 18.74953449703525,
+      "median_travel_min": 16.740052192893565,
+      "mean_abs_eta_error_min": 1.4893607542160365,
+      "median_abs_eta_error_min": 1.090078728933319,
+      "eta_bias_min": -0.358214391262828,
+      "on_time_pct": 71.875,
+      "mean_km": 4.2733041875
+    },
+    "historical": {
+      "n": 480,
+      "mean_travel_min": 18.681013916928986,
+      "median_travel_min": 16.696740942491488,
+      "mean_abs_eta_error_min": 1.0228989213108417,
+      "median_abs_eta_error_min": 0.8073841569264915,
+      "eta_bias_min": 0.0305951387648732,
+      "on_time_pct": 81.25,
+      "mean_km": 4.258509520833333
+    }
+  },
+  "pairs": {
+    "snapshot": {
+      "mean_saving_min": 0.08964573642928358,
+      "median_saving_min": 0.0,
+      "pct_saving": 0.4781224645521665,
+      "win_pct": 12.916666666666666,
+      "tie_pct": 78.54166666666667,
+      "loss_pct": 8.541666666666666,
+      "eta_error_reduction_pct": 31.398121324615236
+    },
+    "historical": {
+      "mean_saving_min": 0.021125156323023853,
+      "median_saving_min": 0.0,
+      "pct_saving": 0.11308356397015448,
+      "win_pct": 4.791666666666667,
+      "tie_pct": 91.04166666666667,
+      "loss_pct": 4.166666666666667,
+      "eta_error_reduction_pct": 0.1143283701249942
+    }
+  },
+  "n_trips": 480,
+  "subgroups": {
+    "disrupted": {
+      "n": 93,
+      "stats": {
+        "triffy": {
+          "n": 93,
+          "mean_travel_min": 22.328424065996774,
+          "median_travel_min": 18.696437065026718,
+          "mean_abs_eta_error_min": 1.0210462738963308,
+          "median_abs_eta_error_min": 0.9167416304861642,
+          "eta_bias_min": -0.11137095476005142,
+          "on_time_pct": 78.49462365591398,
+          "mean_km": 4.950726451612903
+        },
+        "snapshot": {
+          "n": 93,
+          "mean_travel_min": 22.56565125474568,
+          "median_travel_min": 19.189883186849816,
+          "mean_abs_eta_error_min": 1.6548052616381541,
+          "median_abs_eta_error_min": 1.1025016062212671,
+          "eta_bias_min": -0.16320281238954865,
+          "on_time_pct": 67.74193548387096,
+          "mean_km": 4.9857282795698925
+        },
+        "historical": {
+          "n": 93,
+          "mean_travel_min": 22.52255625433377,
+          "median_travel_min": 19.2878927224209,
+          "mean_abs_eta_error_min": 1.2169522819943426,
+          "median_abs_eta_error_min": 1.0800480210641885,
+          "eta_bias_min": 0.6213935626293946,
+          "on_time_pct": 68.81720430107526,
+          "mean_km": 4.898982258064516
+        }
+      },
+      "vs_snapshot": {
+        "mean_saving_min": 0.2372271887489109,
+        "pct_saving": 1.0512756138559072,
+        "win_pct": 18.27956989247312,
+        "loss_pct": 7.526881720430108
+      }
+    },
+    "clear": {
+      "n": 387,
+      "stats": {
+        "triffy": {
+          "n": 387,
+          "mean_travel_min": 17.77830275698492,
+          "median_travel_min": 15.95741305289727,
+          "mean_abs_eta_error_min": 1.0218936335859437,
+          "median_abs_eta_error_min": 0.885426719555835,
+          "eta_bias_min": -0.3693146032683782,
+          "on_time_pct": 83.97932816537468,
+          "mean_km": 4.116145581395349
+        },
+        "snapshot": {
+          "n": 387,
+          "mean_travel_min": 17.83248318316685,
+          "median_travel_min": 16.184526321867693,
+          "mean_abs_eta_error_min": 1.449602771812272,
+          "median_abs_eta_error_min": 1.086380855395934,
+          "eta_bias_min": -0.4050776388990424,
+          "on_time_pct": 72.86821705426357,
+          "mean_km": 4.102101498708011
+        },
+        "historical": {
+          "n": 387,
+          "mean_travel_min": 17.757852580033266,
+          "median_travel_min": 15.895857864944022,
+          "mean_abs_eta_error_min": 0.9762659431620934,
+          "median_abs_eta_error_min": 0.7595244288913212,
+          "eta_bias_min": -0.11137967627233737,
+          "on_time_pct": 84.23772609819122,
+          "mean_km": 4.104597467700259
+        }
+      },
+      "vs_snapshot": {
+        "mean_saving_min": 0.054180426181931286,
+        "pct_saving": 0.3038299580906121,
+        "win_pct": 11.627906976744185,
+        "loss_pct": 8.785529715762275
+      }
+    }
+  },
+  "baseline_lag_s": 300.0,
+  "city": "Kolkata \u2014 Esplanade / Park Street / BBD Bagh",
+  "cameras": 400,
+  "edges": 13387
+}
