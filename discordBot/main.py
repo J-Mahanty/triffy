@@ -27,6 +27,7 @@ engine: TriffyEngine | None = None
 @client.event
 # On the bot's Startup 
 async def on_ready(): 
+    global engine
     print("Triffy is now online")
     try:
         channel = await client.fetch_channel(channel_id)
@@ -71,7 +72,6 @@ async def hello(ctx) :
 
 @client.command(help="Start a new trip")
 # Information about the Origin, Destination and Time of travel. 
-@client.command(help="Start a new trip")
 async def route(ctx):
     global engine
 
