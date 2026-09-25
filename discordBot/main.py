@@ -40,7 +40,10 @@ async def on_ready():
         print(f"An error occurred: {e}")
 
     if engine is None:
-        engine = await asyncio.to_thread(TriffyEngine)
+        engine = await asyncio.to_thread(
+            TriffyEngine,
+            start_clock=datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M"),
+        )
         print(f"Engine ready — {engine.city} @ {engine.clock}")
 
 
@@ -93,6 +96,10 @@ async def route(ctx):
         destination = destination_message.content
 
         await ctx.send("Planning your route…")
+
+        await asyncio.to_thread(
+            engine.set_clock, datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M")
+        )
 
         try:
             plan = await asyncio.to_thread(engine.plan, origin, destination)
