@@ -37,6 +37,19 @@ from .network import RoadNetwork
 # understates route-level spread, so we inflate the total.
 CORRELATION_INFLATION = 1.28
 
+# Congestion bands for colouring a route along its length: free flowing,
+# slowing, congested, near gridlock. The same cut-offs the dashboard uses for
+# the traffic layer, read from speed through the live engine's speed model
+# (speed = free * (1 - 0.8 * congestion)), so a route and the roads under it
+# are coloured by the same rule.
+TRAFFIC_BANDS = (0.30, 0.52, 0.72)
+
+
+def traffic_level(speed_ratio: float) -> int:
+    """0 (free flowing) .. 3 (near gridlock), from speed as a share of free flow."""
+    congestion = (1.0 - speed_ratio) / 0.8
+    return sum(congestion >= b for b in TRAFFIC_BANDS)
+
 
 @dataclass
 class Step:

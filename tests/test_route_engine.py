@@ -134,6 +134,14 @@ def test_routes_are_plausible(eng):
         assert net.ev[a] == net.eu[b], "route is not a connected path"
 
 
+def test_traffic_levels_follow_the_dashboard_bands():
+    from route_engine.router import traffic_level
+    assert traffic_level(1.0) == 0          # free flow
+    assert traffic_level(0.70) == 1         # congestion 0.375: slowing
+    assert traffic_level(0.50) == 2         # congestion 0.625: congested
+    assert traffic_level(0.20) == 3         # congestion 1.0: near gridlock
+
+
 def test_eta_distribution_is_ordered(eng):
     plan = eng.plan("Sealdah", "Victoria Memorial", user_id="rider")
     r = plan.best
