@@ -1,0 +1,33 @@
+{
+  "_comment": "Curated landmark gazetteer for the Kolkata extract. Chat users name places, not street segments, so these are resolved ahead of street names. Coordinates are snapped to the nearest routable intersection at load time.",
+  "landmarks": [
+    {"name": "Esplanade",            "lat": 22.5645, "lon": 88.3510, "aliases": ["esplanade", "dharmatala", "dharamtala", "এসপ্ল্যানেড", "ধর্মতলা", "एस्प्लेनेड", "धर्मतला", "dharmotola"]},
+    {"name": "BBD Bagh",             "lat": 22.5697, "lon": 88.3497, "aliases": ["bbd bagh", "dalhousie", "dalhousie square", "bbd", "বিবাদী বাগ", "ডালহৌসি", "बीबीडी बाग", "binoy badal dinesh bagh"]},
+    {"name": "Park Street",          "lat": 22.5530, "lon": 88.3520, "aliases": ["park street metro", "park st", "পার্ক স্ট্রিট", "पार्क स्ट्रीट"]},
+    {"name": "Sealdah",              "lat": 22.5675, "lon": 88.3707, "aliases": ["sealdah station", "sealdah", "শিয়ালদহ", "শিয়ালদা", "सियालदह", "shealdah", "shiyalda", "sealda"]},
+    {"name": "Victoria Memorial",    "lat": 22.5448, "lon": 88.3426, "aliases": ["victoria", "victoria memorial hall", "ভিক্টোরিয়া মেমোরিয়াল", "विक्टोरिया मेमोरियल"]},
+    {"name": "Rabindra Sadan",       "lat": 22.5420, "lon": 88.3467, "aliases": ["rabindra sadan", "nandan", "রবীন্দ্র সদন", "নন্দন"]},
+    {"name": "Maidan",               "lat": 22.5550, "lon": 88.3450, "aliases": ["maidan", "brigade parade ground", "ময়দান", "मैदान"]},
+    {"name": "New Market",           "lat": 22.5615, "lon": 88.3530, "aliases": ["new market", "hogg market", "lindsay street", "নিউ মার্কেট", "न्यू मार्केट"]},
+    {"name": "Camac Street",         "lat": 22.5480, "lon": 88.3520, "aliases": ["camac", "camac st", "ক্যামাক স্ট্রিট"]},
+    {"name": "Park Circus",          "lat": 22.5390, "lon": 88.3670, "aliases": ["park circus", "park circus seven point", "পার্ক সার্কাস", "पार्क सर्कस"]},
+    {"name": "Mullick Bazar",        "lat": 22.5440, "lon": 88.3630, "aliases": ["mullick bazar", "mallick bazar", "মল্লিকবাজার", "মল্লিক বাজার"]},
+    {"name": "College Street",       "lat": 22.5745, "lon": 88.3640, "aliases": ["college street", "boi para", "কলেজ স্ট্রিট", "বইপাড়া", "कॉलेज स्ट्रीट"]},
+    {"name": "Bowbazar",             "lat": 22.5690, "lon": 88.3600, "aliases": ["bowbazar", "bow bazar", "bowbazaar", "বউবাজার"]},
+    {"name": "Chandni Chowk",        "lat": 22.5670, "lon": 88.3560, "aliases": ["chandni chowk", "chandni", "চাঁদনি চক", "चांदनी चौक"]},
+    {"name": "Moulali",              "lat": 22.5640, "lon": 88.3690, "aliases": ["moulali", "mowlali", "মৌলালি"]},
+    {"name": "Girish Park",          "lat": 22.5830, "lon": 88.3590, "aliases": ["girish park", "গিরিশ পার্ক"]},
+    {"name": "Rajabazar",            "lat": 22.5790, "lon": 88.3720, "aliases": ["rajabazar", "raja bazar", "রাজাবাজার"]},
+    {"name": "Eden Gardens",         "lat": 22.5645, "lon": 88.3433, "aliases": ["eden gardens", "eden", "ইডেন গার্ডেন্স", "ईडन गार्डन्स"]},
+    {"name": "Fort William",         "lat": 22.5545, "lon": 88.3390, "aliases": ["fort william", "ফোর্ট উইলিয়াম"]},
+    {"name": "Bhowanipore",          "lat": 22.5350, "lon": 88.3450, "aliases": ["bhowanipore", "bhowanipur", "elgin", "ভবানীপুর", "भवानीपुर", "bhabanipur"]},
+    {"name": "Alipore",              "lat": 22.5360, "lon": 88.3320, "aliases": ["alipore", "alipur", "আলিপুর", "अलीपुर"]},
+    {"name": "Howrah Bridge approach","lat": 22.5790, "lon": 88.3470, "aliases": ["howrah bridge", "rabindra setu", "howrah", "হাওড়া ব্রিজ", "রবীন্দ্র সেতু", "হাওড়া", "हावड़ा ब्रिज", "हावड़ा", "haora"]},
+    {"name": "Shakespeare Sarani",   "lat": 22.5460, "lon": 88.3560, "aliases": ["shakespeare sarani", "theatre road", "শেক্সপিয়র সরণি"]},
+    {"name": "Exide Crossing",       "lat": 22.5395, "lon": 88.3475, "aliases": ["exide", "exide more", "exide crossing", "এক্সাইড মোড়"]},
+    {"name": "Sudder Street",        "lat": 22.5590, "lon": 88.3520, "aliases": ["sudder street", "sudder st", "সদর স্ট্রিট"]},
+    {"name": "Strand Road",          "lat": 22.5720, "lon": 88.3420, "aliases": ["strand", "strand road", "স্ট্র্যান্ড রোড"]},
+    {"name": "Writers Building",     "lat": 22.5710, "lon": 88.3490, "aliases": ["writers building", "writers", "রাইটার্স বিল্ডিং", "মহাকরণ"]},
+    {"name": "Maa Flyover",          "lat": 22.5395, "lon": 88.3720, "aliases": ["maa flyover", "ma flyover", "মা ফ্লাইওভার"]}
+  ]
+}
