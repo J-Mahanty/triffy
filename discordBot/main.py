@@ -74,8 +74,21 @@ async def hello(ctx) :
 async def route(ctx):
 
     if engine is None:
-        await ctx.send("Engine is still loading, please try again in a moment.")
-        return
+        try:
+            engine = await asyncio.to_thread(TriffyEngine)
+            print(f"Engine ready — {engine.city} @ {engine.clock}")
+            try:
+                channel = await client.fetch_channel(channel_id)
+                await channel.send(f"Engine ready — {engine.city} @ {engine.clock}")
+            except Exception:
+                pass
+        except Exception as e:
+            print(f"Engine failed to load: {e}")
+            try:
+                channel = await client.fetch_channel(channel_id)
+                await channel.send(f"Engine failed to load: `{e}`")
+            except Exception:
+                pass
     
     await ctx.send("Current Location?")
 
