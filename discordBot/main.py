@@ -71,28 +71,16 @@ async def hello(ctx) :
 
 @client.command(help="Start a new trip")
 # Information about the Origin, Destination and Time of travel. 
+@client.command(help="Start a new trip")
 async def route(ctx):
+    global engine
 
     if engine is None:
-        try:
-            engine = await asyncio.to_thread(TriffyEngine)
-            print(f"Engine ready — {engine.city} @ {engine.clock}")
-            try:
-                channel = await client.fetch_channel(channel_id)
-                await channel.send(f"Engine ready — {engine.city} @ {engine.clock}")
-            except Exception:
-                pass
-        except Exception as e:
-            print(f"Engine failed to load: {e}")
-            try:
-                channel = await client.fetch_channel(channel_id)
-                await channel.send(f"Engine failed to load: `{e}`")
-            except Exception:
-                pass
-    
+        await ctx.send("Engine is still loading, please try again in a moment.")
+        return
+
     await ctx.send("Current Location?")
 
-    # Making sure bot responds in the same channel, with the same user
     def check(message):
         return message.author == ctx.author and message.channel == ctx.channel
 
@@ -104,15 +92,6 @@ async def route(ctx):
         destination_message = await client.wait_for("message", check=check, timeout=120)
         destination = destination_message.content
 
-        current_time = datetime.now(ZoneInfo("Asia/Kolkata"))
-
-        await ctx.send(
-            f"**Trip saved!**\n\n"
-            f"**Origin:** {origin}\n"
-            f"**Destination:** {destination}\n"
-            f"**Started at:** {current_time.strftime('%I:%M %p')}"
-        )
-
         await ctx.send("Planning your route…")
 
         try:
@@ -120,13 +99,13 @@ async def route(ctx):
         except ValueError as e:
             await ctx.send(f"Could not plan that route: {e}")
             return
- 
+
         r = plan.best
         mean_min = round(r.mean_s / 60)
         p90_min = round(r.p90_s / 60)
         reliability_pct = round(r.reliability * 100)
         arrive_clock = fmt_clock(r.arrival_s)
- 
+
         lines = [
             f"**{plan.origin} → {plan.destination}**",
             f"Depart at **{engine.clock}**",
@@ -136,24 +115,23 @@ async def route(ctx):
             f"Reliability: {reliability_pct}%",
             f"Arrives around: **{arrive_clock}**",
         ]
- 
+
         if plan.advisory:
             lines += ["", f"_{plan.advisory}_"]
- 
+
         if len(plan.routes) > 1:
             alt_lines = []
             for alt in plan.routes[1:]:
                 alt_lines.append(f"• {alt.label} — {round(alt.mean_s / 60)} min")
             lines += ["", "**Alternatives:**"] + alt_lines
- 
+
         if MAP_BASE:
             lines += ["", f"View on map: {MAP_BASE}"]
- 
+
         await ctx.send("\n".join(lines))
 
     except asyncio.TimeoutError:
         await ctx.send("You took too long to respond. Please use !route again.")
-
 
 @client.event
 # Error Handling
