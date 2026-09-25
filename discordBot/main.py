@@ -40,7 +40,10 @@ async def on_ready():
         print(f"An error occurred: {e}")
 
     if engine is None:
-        engine = await asyncio.to_thread(TriffyEngine)
+        engine = await asyncio.to_thread(
+            TriffyEngine,
+            start_clock = datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M"),
+        )
         print(f"Engine ready — {engine.city} @ {engine.clock}")
 
 
@@ -70,6 +73,18 @@ async def hello(ctx) :
     await ctx.send(f"Hello {ctx.author.name}, I am triffy")
 
 
+async def _send_long(ctx, text, limit=1900):
+    while text:
+        if len(text) <= limit:
+            await ctx.send(text)
+            return
+        cut = text.rfind("\n", 0, limit)
+        if cut == -1:
+            cut = limit
+        await ctx.send(text[:cut])
+        text = text[cut:].lstrip("\n")
+
+
 @client.command(help="Start a new trip")
 # Information about the Origin, Destination and Time of travel. 
 async def route(ctx):
@@ -93,6 +108,10 @@ async def route(ctx):
         destination = destination_message.content
 
         await ctx.send("Planning your route…")
+
+        await asyncio.to_thread(
+            engine.set_clock, datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M")
+        )
 
         try:
             plan = await asyncio.to_thread(engine.plan, origin, destination)
@@ -119,6 +138,13 @@ async def route(ctx):
         if plan.advisory:
             lines += ["", f"_{plan.advisory}_"]
 
+        if r.steps:
+            lines += ["", "**Turn-by-turn:**"]
+            lines += [
+                f"{i}. {s.instruction} ({round(s.distance_m)} m)"
+                for i, s in enumerate(r.steps, start=1)
+            ]
+        
         if len(plan.routes) > 1:
             alt_lines = []
             for alt in plan.routes[1:]:
