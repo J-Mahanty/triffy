@@ -43,6 +43,7 @@ async def on_member_join(member) :
         user = await client.fetch_user(member.id)
         await channel.send(f"Attempting to direct message {member.name}")
         await user.send(f"Hello {user.name}! This is the start of your chat with Triffy. Say something to get started.")
+        await user.send("All messages directed to Triffy must begin with ! and followed by no spaces.")
     except discord.Forbidden:
         # If permission denied
         await channel.send(f"Could not DM {member.name}. They have DMs disabled.")
