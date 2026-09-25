@@ -9,6 +9,8 @@ services:
       - APP_PORT
       - REDIS_HOST
       - REDIS_PORT
+      - TRIFFY_CITY
+      - TRIFFY_MAP_BASE
 
   redis:
     image: redis:alpine
