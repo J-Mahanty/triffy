@@ -48,7 +48,9 @@ CITIES: dict[str, CityBox] = {
                    51.4850, -0.1650, 51.5400, -0.0600),
 }
 
-ACTIVE_CITY = os.environ.get("TRIFFY_CITY", "kol")
+# `or` rather than a get() default: hosting panels often set a variable to an
+# empty string, and an empty city name means "no road graph", not "default".
+ACTIVE_CITY = os.environ.get("TRIFFY_CITY") or "kol"
 
 # Where the dashboard is reachable, for the "see it on the map" link the chat
 # puts under a route. The default is the demo laptop's own server.
@@ -57,7 +59,7 @@ ACTIVE_CITY = os.environ.get("TRIFFY_CITY", "kol")
 # not sitting at this machine - a Telegram user on a phone cannot open
 # 127.0.0.1. Set it to "" to turn the link off entirely, which is the right
 # thing when nothing is serving the dashboard.
-MAP_BASE = os.environ.get("TRIFFY_MAP_BASE", "http://127.0.0.1:8000").rstrip("/")
+MAP_BASE = (os.environ.get("TRIFFY_MAP_BASE") or "http://127.0.0.1:8000").rstrip("/")
 
 
 def city() -> CityBox:

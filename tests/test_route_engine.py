@@ -165,6 +165,18 @@ def test_route_traffic_runs_are_the_whole_route(eng):
         assert list(runs[-1]["g"][-1]) == list(d["geometry"][-1])
 
 
+def test_empty_settings_fall_back_to_the_defaults():
+    """A hosting panel that sets TRIFFY_CITY to \"\" must not break startup."""
+    import subprocess
+    env = dict(os.environ, TRIFFY_CITY="", TRIFFY_MAP_BASE="")
+    out = subprocess.run(
+        [sys.executable, "-c", "from route_engine import config as c; "
+         "print(c.ACTIVE_CITY, c.MAP_BASE)"],
+        env=env, capture_output=True, text=True,
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    assert out.stdout.split() == ["kol", "http://127.0.0.1:8000"], out.stderr
+
+
 def test_eta_distribution_is_ordered(eng):
     plan = eng.plan("Sealdah", "Victoria Memorial", user_id="rider")
     r = plan.best
