@@ -1,0 +1,16 @@
+services:
+  web:
+    build: .
+    ports:
+      - "${APP_PORT}:35000"
+    environment:
+      - SERVER_BOT_TOKEN
+      - CHANNEL_ID
+      - APP_PORT
+      - REDIS_HOST
+      - REDIS_PORT
+      - TRIFFY_CITY
+      - TRIFFY_MAP_BASE
+
+  redis:
+    image: redis:alpine

@@ -1,0 +1,33 @@
+# Triffy dependencies. One install for the whole project:
+#     pip install -r requirements.txt
+# Needs Python 3.10 or newer. No GPU needed.
+# (Live vehicle detection is optional: pip install -r requirements-vision.txt)
+
+# --- Discord bot (discordBot/) ---
+aiohappyeyeballs==2.7.1
+aiohttp==3.14.3
+aiosignal==1.4.0
+attrs==26.1.0
+discord.py==2.7.1
+frozenlist==1.8.0
+idna==3.20
+multidict==6.9.0
+propcache==0.5.4
+python-dotenv==1.2.3
+typing_extensions==4.16.0
+yarl==1.25.1
+
+# --- Route engine (route_engine/): prediction, analysis and API ---
+numpy>=1.24
+scipy>=1.10
+requests>=2.28
+opencv-python>=4.8
+# Time-zone database. Windows has none built in, and the London clock needs it.
+tzdata
+fastapi>=0.100
+uvicorn>=0.23
+pydantic>=2.0
+
+# --- Tests ---
+pytest>=7.0
+httpx>=0.24
