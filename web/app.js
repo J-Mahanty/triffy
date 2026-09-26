@@ -601,6 +601,58 @@ function drawRoutes() {
   MAP.fitBounds(L.polyline(sel.geometry).getBounds(), mapPadding());
 }
 
+/* ---------- mascot buddy ---------- */
+
+// A friendly, low-stakes gimmick: click the mascot, get one short tip about
+// using Triffy. It never fetches anything and never blocks the map or plan
+// sheet - it only opens/closes a speech bubble next to itself.
+const MASCOT_TIPS = [
+  "Tap the swap arrows between the two fields to flip your trip in one go.",
+  "Kolkata runs on modelled traffic over real roads; London is driven only by real TfL cameras. The badge above the search box always says which.",
+  "Your route's colour shows the traffic you're expected to meet when you actually reach that stretch, not the traffic there right now.",
+  "In Kolkata, try 'Arrive by' instead of 'Leave at' — I'll work backwards from your deadline.",
+  "Tap any alternative route card to see it drawn on the map instead.",
+  "The percentage next to your ETA is how predictable that route has been, not how fast it is.",
+  "Pick how you're travelling — car, bike, auto or taxi — and I'll weigh routes the way that traveller actually would.",
+  "On the London side, the tip tells you what share of your route is informed by live cameras versus typical conditions."
+];
+
+function wireMascot() {
+  const btn = document.getElementById('mascotBtn');
+  const bubble = document.getElementById('mascotBubble');
+  const text = document.getElementById('mascotText');
+  const close = document.getElementById('mascotBubbleClose');
+  if (!btn || !bubble || !text || !close) return;
+
+  let lastIndex = -1;
+  const pickTip = () => {
+    if (MASCOT_TIPS.length === 1) return MASCOT_TIPS[0];
+    let i = Math.floor(Math.random() * MASCOT_TIPS.length);
+    if (i === lastIndex) i = (i + 1) % MASCOT_TIPS.length;
+    lastIndex = i;
+    return MASCOT_TIPS[i];
+  };
+
+  const openBubble = () => {
+    text.textContent = pickTip();
+    bubble.hidden = false;
+  };
+  const closeBubble = () => { bubble.hidden = true; };
+
+  btn.onclick = () => { bubble.hidden ? openBubble() : closeBubble(); };
+  close.onclick = (e) => { e.stopPropagation(); closeBubble(); };
+
+  // A tap anywhere else on the page dismisses the tip, like any other popover.
+  document.addEventListener('click', (e) => {
+    if (bubble.hidden) return;
+    if (e.target === btn || btn.contains(e.target) || bubble.contains(e.target)) return;
+    closeBubble();
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !bubble.hidden) closeBubble();
+  });
+}
+
 /* ---------- controls ---------- */
 
 function wire() {
@@ -648,6 +700,8 @@ function wire() {
       if (e.key === 'Enter') plan();
     });
   });
+
+  wireMascot();
 }
 
 /* ---------- util ---------- */
