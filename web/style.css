@@ -671,6 +671,10 @@ body.drawer-off .timebar { right: var(--gap); max-width: calc(100vw - var(--plan
   .leaflet-bottom { bottom: min(var(--sheet-visible), 70vh);
     transition: bottom .45s var(--sheet-ease); }
 
+  /* Every pixel belongs to the map and the sheet on a phone; the brand mark in
+     the sheet's header carries the mascot there. */
+  .mascot { display: none; }
+
   .vw-cols { grid-template-columns: 1fr; }
 }
 
