@@ -1,3 +1,8 @@
+# Prefer the newest version that has a ready-made build for this machine over
+# compiling an even newer one (on older Macs, OpenCV would otherwise build
+# from source for an hour or more).
+--prefer-binary
+
 # Triffy dependencies. One install for the whole project:
 #     pip install -r requirements.txt
 # Needs Python 3.10 or newer. No GPU needed.
