@@ -50,9 +50,9 @@ async function boot() {
   ROUTE_LAYER = L.layerGroup().addTo(MAP);
   INC_LAYER = L.layerGroup().addTo(MAP);
 
-  // On a small laptop three columns leave the map a sliver, so the map
-  // key starts closed there; the chip button opens it.
-  if (innerWidth <= 1280 && innerWidth > 860) {
+  // On a small laptop three columns leave the map a sliver, and on a phone the
+  // key would cover the map, so it starts closed there; the chip button opens it.
+  if (innerWidth <= 1280) {
     document.body.classList.add('drawer-off');
     const t = document.getElementById('drawerToggle');
     t.setAttribute('aria-expanded', 'false');
@@ -364,6 +364,8 @@ function setCompact(on) {
   search.classList.toggle('compact', on);
   document.body.classList.toggle('routed', on);
   sum.hidden = !on;
+  // On a phone: an answer opens the sheet to show it; editing opens it fully.
+  setSheet(on ? 'half' : 'full');
   if (on) {
     const v = id => document.getElementById(id).value.trim();
     const who = document.getElementById('persona');
@@ -549,10 +551,16 @@ function renderRoutes() {
     };
   });
   drawRoutes();
+  setSheet(SHEET);   // the answer's height changed, so the rests did too
 }
 
 function mapPadding() {
-  if (innerWidth <= 860) return { paddingTopLeft: [24, 24], paddingBottomRight: [24, 24] };
+  // On a phone, frame the route in the map left between the pills and the sheet.
+  if (PHONE.matches) {
+    const top = document.querySelector('.status').getBoundingClientRect().bottom + 12;
+    return { paddingTopLeft: [28, top],
+             paddingBottomRight: [28, Math.min(SHEET_SHOWN, innerHeight * 0.7) + 28] };
+  }
   const plan = document.querySelector('.plan').getBoundingClientRect();
   const drawerOn = !document.body.classList.contains('drawer-off');
   const right = drawerOn ? document.getElementById('drawer').getBoundingClientRect().width + 36 : 36;
@@ -608,6 +616,87 @@ function drawRoutes() {
       html: '<svg viewBox="0 0 24 30"><path d="M12 29s10-10.5 10-17A10 10 0 0 0 2 12c0 6.5 10 17 10 17z" fill="#1f5ae6" stroke="#fff" stroke-width="2"/><circle cx="12" cy="12" r="3.6" fill="#fff"/></svg>' }) }).addTo(ROUTE_LAYER);
   }
   MAP.fitBounds(L.polyline(sel.geometry).getBounds(), mapPadding());
+}
+
+/* ---------- phones: the bottom sheet ---------- */
+
+// On a phone the plan is a sheet over a full-screen map (style.css), resting
+// at one of three heights, as in Apple or Google Maps:
+//   peek - the trip only, so the map has the screen;
+//   half - the trip and the answer;
+//   full - everything; only now does the sheet's content scroll.
+// The rests come from the content itself, so "half" always ends just below
+// the answer, however long the trip summary or advisory above it runs.
+const PHONE = matchMedia('(max-width: 860px)');
+let SHEET = 'half';          // the rest the sheet is at, or heading for
+let SHEET_SHOWN = 0;         // px of sheet on screen, for framing the map
+
+function sheetRests() {
+  const sheet = document.querySelector('.plan');
+  const top = sheet.getBoundingClientRect().top - sheet.scrollTop;
+  const bottomOf = sel => {
+    const el = sheet.querySelector(sel);
+    return el && el.offsetParent ? el.getBoundingClientRect().bottom - top : 0;
+  };
+  const full = sheet.offsetHeight;
+  const peek = Math.min(Math.max(bottomOf('.search') + 18, 150), innerHeight * 0.42);
+  // Half ends just below the headline answer (minutes, arrival), leaving the
+  // map most of the screen; the detail is a flick away.
+  const half = Math.min(Math.max((bottomOf('.results .answer-top') || innerHeight * 0.5) + 18,
+                                 peek + 100), innerHeight * 0.62);
+  return { peek, half, full };
+}
+
+// Put the sheet at a rest (animated), or anywhere (instantly, mid-drag).
+function showSheet(px, animate) {
+  const sheet = document.querySelector('.plan');
+  sheet.classList.toggle('dragging', !animate);
+  sheet.style.transform = `translateY(${Math.round(sheet.offsetHeight - px)}px)`;
+  SHEET_SHOWN = px;
+  document.documentElement.style.setProperty('--sheet-visible', Math.round(px) + 'px');
+}
+
+function setSheet(rest, animate = true) {
+  const sheet = document.querySelector('.plan');
+  if (!PHONE.matches) {                 // a laptop: the plan is a side panel
+    sheet.style.transform = '';
+    delete sheet.dataset.sheet;
+    return;
+  }
+  SHEET = rest;
+  sheet.dataset.sheet = rest;
+  if (rest !== 'full') sheet.scrollTop = 0;
+  showSheet(sheetRests()[rest], animate);
+  // Once it settles, frame the route in the map left above it. A timer, not
+  // transitionend: a sheet already at its rest never fires one.
+  clearTimeout(REFIT);
+  REFIT = setTimeout(refitAboveSheet, animate ? 460 : 0);
+}
+let REFIT = 0;
+
+function refitAboveSheet() {
+  if (!PHONE.matches || SHEET === 'full' || !hasRoutes()) return;
+  const sel = PLAN.routes[SELECTED];
+  if (sel) MAP.fitBounds(L.polyline(sel.geometry).getBounds(), mapPadding());
+}
+
+function wireSheet() {
+  const sheet = document.querySelector('.plan');
+
+  // A tap on the grabber opens the sheet a step, or closes it from full.
+  sheet.addEventListener('click', e => {
+    if (PHONE.matches && e.clientY - sheet.getBoundingClientRect().top < 22) {
+      setSheet(SHEET === 'full' ? 'half' : SHEET === 'half' ? 'full' : 'half');
+    }
+  }, true);
+
+  // Typing needs the whole sheet, and room above the keyboard.
+  sheet.addEventListener('focusin', e => {
+    if (e.target.matches('input, select') && SHEET !== 'full') setSheet('full');
+  });
+  addEventListener('resize', () => setSheet(SHEET, false));
+  PHONE.addEventListener('change', () => { setSheet(SHEET, false); MAP.invalidateSize(); });
+  setSheet(SHEET, false);
 }
 
 /* ---------- mascot buddy ---------- */
@@ -711,6 +800,7 @@ function wire() {
   });
 
   wireMascot();
+  wireSheet();
 }
 
 /* ---------- util ---------- */
