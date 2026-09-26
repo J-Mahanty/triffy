@@ -2320,3 +2320,8 @@ def test_a_turn_that_keeps_the_road_says_so(eng):
             for a, b in zip(steps, steps[1:]):
                 if a.road == b.road:
                     assert " to stay on " in b.instruction, (o, d, b.instruction)
+
+
+def test_live_clock_is_london_time(london_replay):
+    """A 17:00 replay says 17:00, whatever time zone the computer is in."""
+    assert london_replay.live_state()["clock"] in ("17:00", "17:01")

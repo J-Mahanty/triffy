@@ -597,7 +597,9 @@ class LiveEngine:
             "city": net.meta.get("label", self.city),
             "center": net.meta.get("center"),
             "bbox": net.meta.get("bbox"),
-            "clock": time.strftime("%H:%M", time.localtime(now)),
+            # London's time, not this computer's: a laptop in Kolkata is
+            # 4.5 hours ahead of the traffic it is showing.
+            "clock": datetime.fromtimestamp(now, LONDON).strftime("%H:%M"),
             "ids": [int(e) for e in keep],
             "cong": [round(float(cong[e]), 3) for e in keep],
             "kph": [round(float(st.kph[e]), 1) for e in keep],
