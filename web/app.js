@@ -154,7 +154,7 @@ function applyModeChrome() {
 
   setProvenance(live, true);
 
-  document.getElementById('clockLabel').textContent = live ? 'London' : 'Simulated time';
+  document.getElementById('clockLabel').textContent = live ? 'London' : 'Kolkata';
   document.getElementById('arriveBy').parentElement.style.display = live ? 'none' : '';
   document.getElementById('depart').parentElement.style.display = live ? 'none' : '';
   document.querySelector('.opts').style.display = live ? 'none' : '';
@@ -232,6 +232,12 @@ async function refresh() {
   // London, so it must show London's time, like the route times do.
   document.getElementById('clock').textContent =
     MODE === 'live' ? clockAt(Date.now() / 1000) : s.clock;
+  // Kolkata's clock is real unless the server pins it (TRIFFY_SIM_CLOCK), and
+  // the label must say which, or a pinned 18:30 reads as a wrong "now".
+  if (MODE === 'sim') {
+    document.getElementById('clockLabel').textContent =
+      s.real_time === false ? 'Simulated time' : 'Kolkata';
+  }
 
   if (MODE === 'sim') renderIncidents(s.incidents);
   renderKpis(s.stats);
