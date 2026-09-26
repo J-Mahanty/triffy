@@ -36,7 +36,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .config import DATA
+from .config import DATA, repo_path
 from .engine import TriffyEngine
 from .router import Router
 from .simulator import fmt_clock
@@ -406,7 +406,7 @@ def main() -> None:
 
     with open(args.out, "w", encoding="utf-8") as fh:
         json.dump(summary, fh, indent=2)
-    print("\nWrote %s" % args.out)
+    print("\nWrote %s" % repo_path(args.out))
 
 
 if __name__ == "__main__":

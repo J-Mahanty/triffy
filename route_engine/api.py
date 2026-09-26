@@ -350,8 +350,9 @@ def api_livecam_clip_stream(cam_id: str):
 @app.get("/api/live/network")
 def api_live_network():
     try:
-        from .clipviewer import prewarm
-        prewarm()                       # so the first camera click is quick
+        # No camera video in the product any more, so opening the live map
+        # must not load YOLO and torch into the API (hundreds of MB, and a
+        # download of the weights on a machine that has never run it).
         return live_engine().network_geometry()
     except Exception as exc:
         raise HTTPException(status_code=503, detail=LIVE_UNAVAILABLE % exc)
@@ -554,6 +555,18 @@ def _loopback_sockets(port: int) -> list:
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser(description="Triffy web server")
+    ap.add_argument("--replay", default="", metavar="'YYYY-MM-DD HH:MM'",
+                    help="replay recorded London traffic from this moment "
+                         "(London time) instead of live readings")
+    args = ap.parse_args()
+    if args.replay:
+        from .live_engine import parse_replay
+        parse_replay(args.replay)          # fail now, not on the first request
+        os.environ["TRIFFY_REPLAY"] = args.replay
+        print("London will replay recorded traffic from %s (London time)."
+              % args.replay, flush=True)
     import uvicorn
     engine()  # boot before serving so the first request is fast
 

@@ -35,7 +35,7 @@
       "median_ae": 0.8725806451612903
     }
   },
-  "source": "C:\\Armageddon\\Triffie\\data\\live_observations.jsonl",
+  "source": "data/live_observations.jsonl",
   "from_collector": true,
   "generated_at": 1789914447.4429398,
   "generated_at_local": "2026-09-20 19:57:27"
