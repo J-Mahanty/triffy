@@ -1,10 +1,13 @@
 FROM python:3.12-slim
 
 # Prevent Python from creating .pyc files
-ENV PYTHONDONTWRITEBYTECODE=1 
+ENV PYTHONDONTWRITEBYTECODE=1
 
 # Prevent Python from adding buffer
 ENV PYTHONUNBUFFERED=1
+
+
+ENV WEB_PORT=42069
 
 WORKDIR /app
 
@@ -17,5 +20,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY discordBot/ ./discordBot/
 COPY route_engine/ ./route_engine/
 COPY data/ ./data/
+COPY web/ ./web/
+
+EXPOSE ${WEB_PORT}
 
 CMD ["python", "discordBot/main.py"]

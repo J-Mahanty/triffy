@@ -1,12 +1,30 @@
 services:
-  web:
+  bot:
     build: .
-    ports:
-      - "${APP_PORT}:35000"
+    command: ["python", "discordBot/main.py"]
+    restart: unless-stopped
+    depends_on:
+      - redis
     environment:
       - SERVER_BOT_TOKEN
       - CHANNEL_ID
-      - APP_PORT
+      - REDIS_HOST
+      - REDIS_PORT
+      - TRIFFY_CITY
+      - TRIFFY_MAP_BASE
+
+  web:
+    build: .
+    command: ["python", "-m", "route_engine.api"]
+    restart: unless-stopped
+    depends_on:
+      - redis
+    ports:
+      - "${APP_PORT:-42069}:${WEB_PORT:-42069}"
+    environment:
+      - TRIFFY_HOST=0.0.0.0
+      - TRIFFY_PORT=${WEB_PORT:-42069}
+      - TRIFFY_READONLY
       - REDIS_HOST
       - REDIS_PORT
       - TRIFFY_CITY
