@@ -2222,3 +2222,66 @@ def test_a_bare_yes_is_not_treated_as_a_failed_route(eng):
 
     # "thanks" must still close a conversation rather than being read as a yes.
     assert "any time" in brain.handle("thanks", "yes-user").lower()
+
+
+def test_live_engine_has_one_clock(london):
+    """Without replay, the live engine's clock is the real time."""
+    import time
+    assert abs(london.now() - time.time()) < 5
+
+
+def test_london_chat_follows_the_engine_clock(london, monkeypatch):
+    """The chat's 'now' must be the engine's, so both mean the same moment."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from route_engine.live_chat import LiveChatEngine
+    five_pm = datetime(2026, 9, 19, 17, 0, tzinfo=ZoneInfo("Europe/London")).timestamp()
+    monkeypatch.setattr(london, "now", lambda: five_pm)
+    assert LiveChatEngine(london).clock == "17:00"
+
+
+def test_replay_time_is_read_as_london_time():
+    from datetime import datetime, timezone
+    from route_engine.live_engine import parse_replay
+    # 17:30 in London on 25 Sep 2026 is 16:30 UTC (British Summer Time).
+    assert parse_replay("2026-09-25 17:30") == datetime(
+        2026, 9, 25, 16, 30, tzinfo=timezone.utc).timestamp()
+    assert parse_replay("") is None and parse_replay(None) is None
+    with pytest.raises(ValueError):
+        parse_replay("yesterday at five")
+
+
+@pytest.fixture(scope="module")
+def london_replay():
+    """London replaying a recorded moment from the data in the repo."""
+    from route_engine.live_engine import LiveEngine, parse_replay
+    return LiveEngine(city="lon", replay_at=parse_replay("2026-09-19 17:00"))
+
+
+def test_replay_uses_the_readings_of_that_moment(london_replay):
+    eng = london_replay
+    if not eng.observations:
+        pytest.skip("the recorded data does not cover the replay moment")
+    # Plenty of cameras are live at the replayed moment...
+    assert len(eng.observations) > 50
+    # ...and none of their readings comes from after it.
+    assert all(o.t_s <= eng.now() for o in eng.observations)
+    assert eng.data_age_s is not None and eng.data_age_s < 1500
+
+
+def test_replay_is_reported_to_the_ui(london, london_replay):
+    assert london.replay_info() is None
+    info = london_replay.replay_info()
+    assert info["from"] == "2026-09-19 17:00"
+    state = london_replay.live_state()
+    assert state["replay"]["from"] == "2026-09-19 17:00"
+    assert abs(state["now_s"] - london_replay.now()) < 60
+
+
+def test_replay_options_are_offered():
+    import subprocess
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for module in ("route_engine.api", "route_engine.cli"):
+        out = subprocess.run([sys.executable, "-m", module, "--help"],
+                             capture_output=True, text=True, cwd=root)
+        assert "--replay" in out.stdout, (module, out.stderr[-300:])
