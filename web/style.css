@@ -675,6 +675,8 @@ body.drawer-off .timebar { right: var(--gap); max-width: calc(100vw - var(--plan
      the sheet's header carries the mascot there. */
   .mascot { display: none; }
 
+  /* Text boxes under 16px make iPhones zoom in when one is tapped. */
+  input, select { font-size: 16px; }
   .vw-cols { grid-template-columns: 1fr; }
 }
 
