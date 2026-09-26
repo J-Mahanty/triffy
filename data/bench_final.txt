@@ -59,4 +59,4 @@ ASSUMPTIONS
     not secretly know the simulator's ground truth.
 ==========================================================================
 
-Wrote C:\Armageddon\Triffie\data\benchmark.json
+Wrote data/benchmark.json
