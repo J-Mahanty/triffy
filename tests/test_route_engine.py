@@ -2285,3 +2285,15 @@ def test_replay_options_are_offered():
         out = subprocess.run([sys.executable, "-m", module, "--help"],
                              capture_output=True, text=True, cwd=root)
         assert "--replay" in out.stdout, (module, out.stderr[-300:])
+
+
+def test_landmarks_spelt_as_they_sound(eng):
+    """People type a place the way they say it."""
+    for typed in ("Parkk Sirkus", "park sirkus", "Parksircus"):
+        place, how = eng.net.match(typed)
+        assert place is not None and place.name == "Park Circus", typed
+        assert how == "typo", typed
+    # ...without inventing a match for places that are not on the map.
+    for typed in ("Mumbai", "London Bridge", "Nowhereville"):
+        place, how = eng.net.match(typed)
+        assert how != "typo", (typed, place)
