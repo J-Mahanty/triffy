@@ -665,6 +665,12 @@ body.drawer-off .timebar { right: var(--gap); max-width: calc(100vw - var(--plan
   body.drawer-off .drawer { transform: scale(.92); opacity: 0; pointer-events: none; }
   body:not(.drawer-off) .leaflet-right { transform: none; }
 
+  /* Pinch to zoom, as in every maps app; the buttons only take space. The
+     attribution rides just above the sheet, where it can always be read. */
+  .leaflet-control-zoom { display: none; }
+  .leaflet-bottom { bottom: min(var(--sheet-visible), 70vh);
+    transition: bottom .45s var(--sheet-ease); }
+
   .vw-cols { grid-template-columns: 1fr; }
 }
 
