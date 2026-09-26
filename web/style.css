@@ -589,29 +589,95 @@ body.drawer-off .timebar { right: var(--gap); max-width: calc(100vw - var(--plan
   .tb { padding: 0 10px; }
 }
 
-/* Phones and small tablets: map on top, everything else flows beneath it. */
+/* ---------- phones: a maps app, not a web page ---------- */
+
+/* The layout of Apple or Google Maps. The map fills the screen. The plan is a
+   bottom sheet over it that rests at three heights - peek, half and full -
+   and is swiped or flicked between them (app.js, "bottom sheet"). The traffic
+   figures float over the map as a row of pills, and the map key sits behind a
+   button. Nothing else scrolls: the page is exactly one screen, and the
+   sheet's own content scrolls only once it is fully open, so a swipe always
+   moves exactly one thing. */
 @media (max-width: 860px) {
-  html, body { overflow: auto; height: auto; }
-  body { display: flex; flex-direction: column; }
-  #map { position: relative; height: 56vh; order: 0; }
-  .sheet, .status, .timebar { position: static; }
-  .plan { width: auto; margin: 0; border-radius: 0; box-shadow: none;
-    border-top: 1px solid var(--line); order: 3; }
-  .status { max-width: none; justify-content: flex-start; padding: 12px 16px 4px;
-    background: var(--surface); order: 2; }
-  .status .chip { box-shadow: none; border: 1px solid var(--line); height: 34px; }
-  .chip-btn { display: none; }
-  .drawer, body.drawer-off .drawer { width: auto; transform: none; opacity: 1; pointer-events: auto;
-    border-radius: 0; box-shadow: none; padding: 0 20px 24px; }
-  .timebar { width: auto; max-width: none; margin: 0; border-radius: 0; box-shadow: none;
-    justify-content: flex-start; padding: 8px 16px 12px; border-bottom: 1px solid var(--line);
-    order: 1; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  :root {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --sheet-top: calc(var(--safe-top) + 62px);   /* room for the pills when full */
+    --sheet-visible: 50vh;                         /* kept current by app.js */
+    --sheet-ease: cubic-bezier(.22, 1, .36, 1);    /* fast out, long settle */
+  }
+  html, body { height: 100%; overflow: hidden; overscroll-behavior: none; }
+
+  /* The sheet. app.js moves it with transform only, so the browser can
+     animate it on the compositor at the phone's full frame rate. */
+  .plan {
+    top: var(--sheet-top); right: 0; bottom: auto; left: 0; width: auto;
+    height: calc(100vh - var(--sheet-top)); height: calc(100dvh - var(--sheet-top));
+    padding: 0 16px calc(28px + var(--safe-bottom));
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -1px 0 rgba(17, 24, 32, .05), 0 -12px 40px -10px rgba(17, 24, 32, .28);
+    transform: translateY(50%);
+    transition: transform .45s var(--sheet-ease);
+    overflow: hidden; overscroll-behavior: contain; touch-action: none;
+    will-change: transform;
+  }
+  .plan[data-sheet="full"] { overflow-y: auto; touch-action: pan-y; }
+  .plan.dragging { transition: none; }
+  /* The grabber: a strip pinned to the sheet's top edge, so the content
+     scrolls under it when the sheet is open and never runs into the edge. */
+  .plan::before {
+    content: ""; display: block; position: sticky; top: 0; z-index: 3;
+    height: 24px; margin: 0 -16px;
+    background: var(--surface) no-repeat center 8px / 36px 5px
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='5'%3E%3Crect width='36' height='5' rx='2.5' fill='%23cfd6dd'/%3E%3C/svg%3E");
+  }
+  .plan-head { min-height: 40px; }
+  .provenance { padding: 9px 12px; font-size: 12.5px; }
+
+  /* Traffic figures: one row of pills over the map, swiped sideways if they
+     do not fit. The map-key button keeps its own place at the right. */
+  .status {
+    top: calc(var(--safe-top) + 12px); right: 58px; left: 12px; max-width: none;
+    flex-wrap: nowrap; justify-content: flex-start; gap: 6px;
+  }
+  /* The clock stays put; the traffic figures scroll sideways beside it, and
+     fade at the edge they scroll under rather than being sliced off. */
+  .status .kpis {
+    flex: 1; min-width: 0; flex-wrap: nowrap; justify-content: flex-start; gap: 6px;
+    overflow-x: auto; scrollbar-width: none; padding: 2px 2px 10px; margin: -2px -2px -10px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  }
+  .status .kpis::-webkit-scrollbar { display: none; }
+  .status .chip { height: 36px; padding: 0 12px; flex-shrink: 0; font-size: 13px; }
+  .chip-btn {
+    position: fixed; top: calc(var(--safe-top) + 12px); right: 12px;
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--surface); box-shadow: var(--shadow-chip);
+  }
+
+  /* The map key: a floating card under the pills, closed until asked for. */
+  .drawer {
+    top: calc(var(--safe-top) + 60px); right: 12px; bottom: auto; left: auto;
+    width: min(290px, calc(100vw - 24px)); max-height: 55vh; z-index: 1160;
+    transform-origin: top right;
+  }
+  body.drawer-off .drawer { transform: scale(.92); opacity: 0; pointer-events: none; }
   body:not(.drawer-off) .leaflet-right { transform: none; }
+
+  /* Pinch to zoom, as in every maps app; the buttons only take space. The
+     attribution rides just above the sheet, where it can always be read. */
+  .leaflet-control-zoom { display: none; }
+  .leaflet-bottom { bottom: min(var(--sheet-visible), 70vh);
+    transition: bottom .45s var(--sheet-ease); }
+
+  /* Every pixel belongs to the map and the sheet on a phone; the brand mark in
+     the sheet's header carries the mascot there. */
+  .mascot { display: none; }
+
+  /* Text boxes under 16px make iPhones zoom in when one is tapped. */
+  input, select { font-size: 16px; }
   .vw-cols { grid-template-columns: 1fr; }
-  .drawer { order: 4; }
-  .timebar::-webkit-scrollbar { display: none; }
-  .timebar .tb { flex-shrink: 0; }
-  .status .kpis { justify-content: flex-start; }
 }
 
 /* Triffy: the drawer now holds only the map key, so it sizes to its content
