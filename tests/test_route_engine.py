@@ -2228,3 +2228,13 @@ def test_live_engine_has_one_clock(london):
     """Without replay, the live engine's clock is the real time."""
     import time
     assert abs(london.now() - time.time()) < 5
+
+
+def test_london_chat_follows_the_engine_clock(london, monkeypatch):
+    """The chat's 'now' must be the engine's, so both mean the same moment."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from route_engine.live_chat import LiveChatEngine
+    five_pm = datetime(2026, 9, 19, 17, 0, tzinfo=ZoneInfo("Europe/London")).timestamp()
+    monkeypatch.setattr(london, "now", lambda: five_pm)
+    assert LiveChatEngine(london).clock == "17:00"
