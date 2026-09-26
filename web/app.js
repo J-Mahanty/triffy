@@ -74,6 +74,9 @@ async function boot() {
   // is all this needs - no second planning path to drift out of step.
   applyTripParams(PARAMS);
   plan();
+  // Keep the clock and the traffic figures current while the page is open
+  // (and not while it sits in a background tab).
+  setInterval(() => { if (!document.hidden) refresh(); }, 30000);
 }
 
 /* ---------- a trip passed in the URL ---------- */
