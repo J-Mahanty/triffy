@@ -2297,3 +2297,16 @@ def test_landmarks_spelt_as_they_sound(eng):
     for typed in ("Mumbai", "London Bridge", "Nowhereville"):
         place, how = eng.net.match(typed)
         assert how != "typo", (typed, place)
+
+
+def test_directions_do_not_repeat_a_road_that_carries_on(eng):
+    """"Bear left onto Mayo Road" twice in a row is one instruction."""
+    for o, d in (("Park Circus", "Howrah Station"), ("Park Circus", "Sealdah")):
+        for r in eng.plan(o, d, user_id="exec", k=3).routes:
+            steps = r.steps[:-1]
+            for a, b in zip(steps, steps[1:]):
+                assert not (a.road == b.road
+                            and b.instruction.startswith(("Continue", "Bear"))), \
+                    (o, d, a.instruction, b.instruction)
+            # Merging moves distance between steps; it never loses any.
+            assert abs(sum(s.distance_m for s in r.steps) - r.distance_m) < 1.0
