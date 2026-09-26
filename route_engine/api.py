@@ -350,8 +350,9 @@ def api_livecam_clip_stream(cam_id: str):
 @app.get("/api/live/network")
 def api_live_network():
     try:
-        from .clipviewer import prewarm
-        prewarm()                       # so the first camera click is quick
+        # No camera video in the product any more, so opening the live map
+        # must not load YOLO and torch into the API (hundreds of MB, and a
+        # download of the weights on a machine that has never run it).
         return live_engine().network_geometry()
     except Exception as exc:
         raise HTTPException(status_code=503, detail=LIVE_UNAVAILABLE % exc)
