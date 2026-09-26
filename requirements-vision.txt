@@ -5,3 +5,7 @@
 ultralytics>=8.3
 torch>=2.0
 lap>=0.5
+# Intel Macs only get torch up to 2.2, which predates NumPy 2
+# ("RuntimeError: Numpy is not available"). Use Python 3.12 there: torch has
+# no Intel-Mac build for Python 3.13.
+numpy<2; sys_platform == "darwin" and platform_machine == "x86_64"

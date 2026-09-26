@@ -134,6 +134,57 @@ def test_routes_are_plausible(eng):
         assert net.ev[a] == net.eu[b], "route is not a connected path"
 
 
+def test_traffic_levels_follow_the_dashboard_bands():
+    from route_engine.router import traffic_level
+    assert traffic_level(1.0) == 0          # free flow
+    assert traffic_level(0.70) == 1         # congestion 0.375: slowing
+    assert traffic_level(0.50) == 2         # congestion 0.625: congested
+    assert traffic_level(0.20) == 3         # congestion 1.0: near gridlock
+
+
+def test_routes_record_predicted_speed_per_edge(eng):
+    plan = eng.plan("Park Circus", "BBD Bagh", user_id="exec", k=3)
+    for r in plan.routes:
+        assert len(r.speed_ratio) == len(r.edges)
+        # Personal profiles cap speed at 105% of free flow.
+        assert all(0.0 < x <= 1.06 for x in r.speed_ratio)
+
+
+def test_route_traffic_runs_are_the_whole_route(eng):
+    """The coloured runs cover every edge, in order, end to end."""
+    plan = eng.plan("Park Circus", "BBD Bagh", user_id="exec", k=3)
+    for r in plan.routes:
+        d = r.as_dict(eng.net)
+        runs = d["traffic"]
+        assert runs, "every route should carry traffic runs"
+        assert sum(x["n"] for x in runs) == d["n_edges"]
+        assert all(x["level"] in (0, 1, 2, 3) for x in runs)
+        # Neighbouring runs differ, or they would have been merged.
+        assert all(a["level"] != b["level"] for a, b in zip(runs, runs[1:]))
+        assert list(runs[0]["g"][0]) == list(d["geometry"][0])
+        assert list(runs[-1]["g"][-1]) == list(d["geometry"][-1])
+
+
+def test_empty_settings_fall_back_to_the_defaults():
+    """A hosting panel that sets TRIFFY_CITY to \"\" must not break startup."""
+    import subprocess
+    env = dict(os.environ, TRIFFY_CITY="", TRIFFY_MAP_BASE="")
+    out = subprocess.run(
+        [sys.executable, "-c", "from route_engine import config as c; "
+         "print(c.ACTIVE_CITY, c.MAP_BASE)"],
+        env=env, capture_output=True, text=True,
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    assert out.stdout.split() == ["kol", "http://127.0.0.1:8000"], out.stderr
+
+
+def test_saved_paths_are_relative_to_the_repo():
+    from route_engine.collector import OBS_PATH
+    from route_engine.config import repo_path
+    assert repo_path(OBS_PATH) == "data/live_observations.jsonl"
+    # Anything outside the repo is left as it is.
+    assert repo_path("/somewhere/else.json").endswith("else.json")
+
+
 def test_eta_distribution_is_ordered(eng):
     plan = eng.plan("Sealdah", "Victoria Memorial", user_id="rider")
     r = plan.best
