@@ -372,8 +372,12 @@ class LiveEngine:
 
     # -- ingest -------------------------------------------------------------
 
-    def _latest_rows(self) -> dict:
-        """Most recent observation per camera, from the collector's log."""
+    def _latest_rows(self, until: float | None = None) -> dict:
+        """Most recent observation per camera, from the collector's log.
+
+        Readings recorded after ``until`` are ignored: in replay, the future
+        of the recording has not happened yet.
+        """
         latest: dict = {}
         if not self.obs_path.exists():
             return latest
@@ -386,6 +390,8 @@ class LiveEngine:
                 cid = r.get("camera_id")
                 if cid not in self.by_id:
                     continue
+                if until is not None and r["t_wall"] > until:
+                    continue
                 prev = latest.get(cid)
                 if prev is None or r["t_wall"] > prev["t_wall"]:
                     latest[cid] = r
@@ -394,7 +400,7 @@ class LiveEngine:
     def refresh(self):
         """Rebuild the network belief from the freshest real observations."""
         now = self.now()
-        rows = self._latest_rows()
+        rows = self._latest_rows(until=now)
         self.latest_rows = rows        # raw readings, for the camera panel
 
         obs, ages = [], []

@@ -2249,3 +2249,21 @@ def test_replay_time_is_read_as_london_time():
     assert parse_replay("") is None and parse_replay(None) is None
     with pytest.raises(ValueError):
         parse_replay("yesterday at five")
+
+
+@pytest.fixture(scope="module")
+def london_replay():
+    """London replaying a recorded moment from the data in the repo."""
+    from route_engine.live_engine import LiveEngine, parse_replay
+    return LiveEngine(city="lon", replay_at=parse_replay("2026-09-19 17:00"))
+
+
+def test_replay_uses_the_readings_of_that_moment(london_replay):
+    eng = london_replay
+    if not eng.observations:
+        pytest.skip("the recorded data does not cover the replay moment")
+    # Plenty of cameras are live at the replayed moment...
+    assert len(eng.observations) > 50
+    # ...and none of their readings comes from after it.
+    assert all(o.t_s <= eng.now() for o in eng.observations)
+    assert eng.data_age_s is not None and eng.data_age_s < 1500
