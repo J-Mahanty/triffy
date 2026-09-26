@@ -2276,3 +2276,12 @@ def test_replay_is_reported_to_the_ui(london, london_replay):
     state = london_replay.live_state()
     assert state["replay"]["from"] == "2026-09-19 17:00"
     assert abs(state["now_s"] - london_replay.now()) < 60
+
+
+def test_replay_options_are_offered():
+    import subprocess
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for module in ("route_engine.api", "route_engine.cli"):
+        out = subprocess.run([sys.executable, "-m", module, "--help"],
+                             capture_output=True, text=True, cwd=root)
+        assert "--replay" in out.stdout, (module, out.stderr[-300:])

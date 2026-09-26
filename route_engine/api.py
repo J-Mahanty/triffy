@@ -554,6 +554,18 @@ def _loopback_sockets(port: int) -> list:
 
 
 def main() -> None:
+    import argparse
+    ap = argparse.ArgumentParser(description="Triffy web server")
+    ap.add_argument("--replay", default="", metavar="'YYYY-MM-DD HH:MM'",
+                    help="replay recorded London traffic from this moment "
+                         "(London time) instead of live readings")
+    args = ap.parse_args()
+    if args.replay:
+        from .live_engine import parse_replay
+        parse_replay(args.replay)          # fail now, not on the first request
+        os.environ["TRIFFY_REPLAY"] = args.replay
+        print("London will replay recorded traffic from %s (London time)."
+              % args.replay, flush=True)
     import uvicorn
     engine()  # boot before serving so the first request is fast
 
