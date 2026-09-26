@@ -1086,7 +1086,7 @@ def test_benchmark_sampling_is_reproducible_and_bounded(eng):
 
 
 def test_camera_measurement_on_a_real_clip(monkeypatch):
-    """YOLO11 + ByteTrack on a real 40-frame TfL clip, on the CPU (the GPU
+    """YOLO11 + tracking on a real 40-frame TfL clip, on the CPU (the GPU
     belongs to the collector)."""
     pytest.importorskip("ultralytics")
     from route_engine.livecams import LiveCameraReader, LiveCamera
@@ -2285,3 +2285,43 @@ def test_replay_options_are_offered():
         out = subprocess.run([sys.executable, "-m", module, "--help"],
                              capture_output=True, text=True, cwd=root)
         assert "--replay" in out.stdout, (module, out.stderr[-300:])
+
+
+def test_landmarks_spelt_as_they_sound(eng):
+    """People type a place the way they say it."""
+    for typed in ("Parkk Sirkus", "park sirkus", "Parksircus"):
+        place, how = eng.net.match(typed)
+        assert place is not None and place.name == "Park Circus", typed
+        assert how == "typo", typed
+    # ...without inventing a match for places that are not on the map.
+    for typed in ("Mumbai", "London Bridge", "Nowhereville"):
+        place, how = eng.net.match(typed)
+        assert how != "typo", (typed, place)
+
+
+def test_directions_do_not_repeat_a_road_that_carries_on(eng):
+    """"Bear left onto Mayo Road" twice in a row is one instruction."""
+    for o, d in (("Park Circus", "Howrah Station"), ("Park Circus", "Sealdah")):
+        for r in eng.plan(o, d, user_id="exec", k=3).routes:
+            steps = r.steps[:-1]
+            for a, b in zip(steps, steps[1:]):
+                assert not (a.road == b.road
+                            and b.instruction.startswith(("Continue", "Bear"))), \
+                    (o, d, a.instruction, b.instruction)
+            # Merging moves distance between steps; it never loses any.
+            assert abs(sum(s.distance_m for s in r.steps) - r.distance_m) < 1.0
+
+
+def test_a_turn_that_keeps_the_road_says_so(eng):
+    """Not "Turn left onto Park Street" then "Turn right onto Park Street"."""
+    for o, d in (("Park Circus", "Park Street"), ("Park Circus", "Sealdah")):
+        for r in eng.plan(o, d, user_id="exec", k=3).routes:
+            steps = r.steps[:-1]
+            for a, b in zip(steps, steps[1:]):
+                if a.road == b.road:
+                    assert " to stay on " in b.instruction, (o, d, b.instruction)
+
+
+def test_live_clock_is_london_time(london_replay):
+    """A 17:00 replay says 17:00, whatever time zone the computer is in."""
+    assert london_replay.live_state()["clock"] in ("17:00", "17:01")

@@ -483,6 +483,22 @@ def _compact_steps(steps, min_m: float = 130.0) -> list:
             prev.edges.extend(s.edges)
             continue
         out.append(s)
+    # Absorbing a short hop can leave the same road twice in a row ("Bear left
+    # onto Mayo Road", then again 500 m later). If the road just carries on,
+    # that is one instruction.
+    kept = [out[0]]
+    for s in out[1:]:
+        prev = kept[-1]
+        if s.road == prev.road and s.instruction.startswith(("Continue", "Bear")):
+            prev.distance_m += s.distance_m
+            prev.seconds += s.seconds
+            prev.edges.extend(s.edges)
+            continue
+        if s.road == prev.road:
+            # A real turn where the name carries on round the corner.
+            s.instruction = s.instruction.replace(" onto ", " to stay on ", 1)
+        kept.append(s)
+    out = kept
     # A tiny opening instruction is equally useless; merge it forward.
     if len(out) > 1 and out[0].distance_m < min_m:
         out[1].distance_m += out[0].distance_m
