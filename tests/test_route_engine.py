@@ -2310,3 +2310,13 @@ def test_directions_do_not_repeat_a_road_that_carries_on(eng):
                     (o, d, a.instruction, b.instruction)
             # Merging moves distance between steps; it never loses any.
             assert abs(sum(s.distance_m for s in r.steps) - r.distance_m) < 1.0
+
+
+def test_a_turn_that_keeps_the_road_says_so(eng):
+    """Not "Turn left onto Park Street" then "Turn right onto Park Street"."""
+    for o, d in (("Park Circus", "Park Street"), ("Park Circus", "Sealdah")):
+        for r in eng.plan(o, d, user_id="exec", k=3).routes:
+            steps = r.steps[:-1]
+            for a, b in zip(steps, steps[1:]):
+                if a.road == b.road:
+                    assert " to stay on " in b.instruction, (o, d, b.instruction)

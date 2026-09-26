@@ -494,6 +494,9 @@ def _compact_steps(steps, min_m: float = 130.0) -> list:
             prev.seconds += s.seconds
             prev.edges.extend(s.edges)
             continue
+        if s.road == prev.road:
+            # A real turn where the name carries on round the corner.
+            s.instruction = s.instruction.replace(" onto ", " to stay on ", 1)
         kept.append(s)
     out = kept
     # A tiny opening instruction is equally useless; merge it forward.
