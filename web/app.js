@@ -682,9 +682,75 @@ function refitAboveSheet() {
 
 function wireSheet() {
   const sheet = document.querySelector('.plan');
+  let g = null;              // the gesture in progress
 
-  // A tap on the grabber opens the sheet a step, or closes it from full.
+  const begin = y => {
+    if (!PHONE.matches) return;
+    g = { y0: y, from: SHEET_SHOWN, rests: sheetRests(), moving: false,
+          lastY: y, lastT: performance.now(), v: 0 };
+  };
+  // Returns true once the gesture is moving the sheet (so the caller can stop
+  // the browser from also scrolling or clicking).
+  const move = y => {
+    if (!g) return false;
+    const dy = y - g.y0;
+    if (!g.moving) {
+      if (Math.abs(dy) < 6) return false;
+      // Fully open: the content scrolls, except a pull down from its very top,
+      // which takes the sheet down instead - as in Apple Maps.
+      if (SHEET === 'full' && (sheet.scrollTop > 0 || dy < 0)) { g = null; return false; }
+      g.moving = true;
+    }
+    const { peek, full } = g.rests;
+    let px = g.from - dy;
+    // Past either end the sheet still follows, but reluctantly.
+    if (px > full) px = full + (px - full) * 0.2;
+    if (px < peek) px = peek - (peek - px) * 0.35;
+    showSheet(px, false);
+    const now = performance.now();
+    if (now > g.lastT) g.v = (y - g.lastY) / (now - g.lastT);   // px per ms, down > 0
+    g.lastY = y; g.lastT = now;
+    return true;
+  };
+  // Where the sheet would coast to, given how fast it was flicked; the nearest
+  // rest to that point wins, so a flick skips ahead as a finger expects.
+  const finish = () => {
+    if (!g) return false;
+    const moved = g.moving;
+    if (moved) {
+      const aim = SHEET_SHOWN - g.v * 240;
+      const [rest] = Object.entries(g.rests)
+        .sort((a, b) => Math.abs(a[1] - aim) - Math.abs(b[1] - aim))[0];
+      setSheet(rest);
+    }
+    g = null;
+    return moved;
+  };
+
+  // Touch: anywhere on the sheet.
+  sheet.addEventListener('touchstart', e => begin(e.touches[0].clientY), { passive: true });
+  sheet.addEventListener('touchmove', e => {
+    if (move(e.touches[0].clientY) && e.cancelable) e.preventDefault();
+  }, { passive: false });
+  sheet.addEventListener('touchend', finish);
+  sheet.addEventListener('touchcancel', finish);
+
+  // Mouse (a narrow desktop window): drag by the grabber or the header.
+  let swallowClick = false;
+  sheet.addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse') return;
+    const fromTop = e.clientY - sheet.getBoundingClientRect().top;
+    if (fromTop < 26 || e.target.closest('.plan-head') && !e.target.closest('button')) {
+      begin(e.clientY);
+    }
+  });
+  addEventListener('pointermove', e => { if (e.pointerType === 'mouse') move(e.clientY); });
+  addEventListener('pointerup', e => {
+    if (e.pointerType === 'mouse' && finish()) swallowClick = true;
+  });
   sheet.addEventListener('click', e => {
+    if (swallowClick) { swallowClick = false; e.preventDefault(); e.stopPropagation(); return; }
+    // A tap on the grabber opens the sheet a step, or closes it from full.
     if (PHONE.matches && e.clientY - sheet.getBoundingClientRect().top < 22) {
       setSheet(SHEET === 'full' ? 'half' : SHEET === 'half' ? 'full' : 'half');
     }
