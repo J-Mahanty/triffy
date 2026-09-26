@@ -370,6 +370,14 @@ class LiveEngine:
             return self.replay_at + (time.time() - self._clock_started)
         return time.time()
 
+    def replay_info(self) -> dict | None:
+        """What the UI needs to label a replay honestly, or None when live."""
+        if self.replay_at is None:
+            return None
+        fmt = lambda t: datetime.fromtimestamp(t, LONDON).strftime("%Y-%m-%d %H:%M")
+        return {"from": fmt(self.replay_at), "now": fmt(self.now()),
+                "now_s": round(self.now())}
+
     # -- ingest -------------------------------------------------------------
 
     def _latest_rows(self, until: float | None = None) -> dict:
@@ -484,6 +492,7 @@ class LiveEngine:
                      "vehicle": user.vehicle},
             "data_age_s": round(self.data_age_s) if self.data_age_s else None,
             "cameras_reporting": len(self.observations),
+            "replay": self.replay_info(),
             "routes": route_dicts,
             "baseline": baseline.as_dict(self.net) if baseline else None,
         }
@@ -594,6 +603,8 @@ class LiveEngine:
             "kph": [round(float(st.kph[e]), 1) for e in keep],
             "obs": [int(bool(st.observed[e])) for e in keep],
             "cams": cams,
+            "now_s": round(now),
+            "replay": self.replay_info(),
             "stats": self.stats(),
         }
 

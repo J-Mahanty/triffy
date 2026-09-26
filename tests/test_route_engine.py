@@ -2267,3 +2267,12 @@ def test_replay_uses_the_readings_of_that_moment(london_replay):
     # ...and none of their readings comes from after it.
     assert all(o.t_s <= eng.now() for o in eng.observations)
     assert eng.data_age_s is not None and eng.data_age_s < 1500
+
+
+def test_replay_is_reported_to_the_ui(london, london_replay):
+    assert london.replay_info() is None
+    info = london_replay.replay_info()
+    assert info["from"] == "2026-09-19 17:00"
+    state = london_replay.live_state()
+    assert state["replay"]["from"] == "2026-09-19 17:00"
+    assert abs(state["now_s"] - london_replay.now()) < 60
