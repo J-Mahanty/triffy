@@ -332,6 +332,16 @@ class LiveEngine:
         self.data_age_s = None
         self.refresh()
 
+    # -- clock --------------------------------------------------------------
+
+    def now(self) -> float:
+        """The moment the engine treats as 'now' (Unix time).
+
+        Everything that asks what time it is goes through here, so the
+        engine can be pointed at another moment in one place.
+        """
+        return time.time()
+
     # -- ingest -------------------------------------------------------------
 
     def _latest_rows(self) -> dict:
@@ -355,7 +365,7 @@ class LiveEngine:
 
     def refresh(self):
         """Rebuild the network belief from the freshest real observations."""
-        now = time.time()
+        now = self.now()
         rows = self._latest_rows()
         self.latest_rows = rows        # raw readings, for the camera panel
 
@@ -455,7 +465,7 @@ class LiveEngine:
         does for every step of every trip anyway.
         """
         user = self.profiles.get(user_id)
-        depart = time.time() if depart is None else float(depart)
+        depart = self.now() if depart is None else float(depart)
         prof = self.forecaster.build_profile(self.state, depart)
         user.adapt_profile(self.net, prof)
         router = Router(self.net, prof, prefs=user)
@@ -536,7 +546,7 @@ class LiveEngine:
         # each other's reading.
         obs_by_cam = {o.cam_id: o for o in self.observations}
         rows = getattr(self, "latest_rows", {}) or {}
-        now = time.time()
+        now = self.now()
         cams = [_camera_row(m, obs_by_cam.get(m.id), rows.get(m.id), now)
                 for m in self.mapped]
 
@@ -544,7 +554,7 @@ class LiveEngine:
             "city": net.meta.get("label", self.city),
             "center": net.meta.get("center"),
             "bbox": net.meta.get("bbox"),
-            "clock": time.strftime("%H:%M"),
+            "clock": time.strftime("%H:%M", time.localtime(now)),
             "ids": [int(e) for e in keep],
             "cong": [round(float(cong[e]), 3) for e in keep],
             "kph": [round(float(st.kph[e]), 1) for e in keep],

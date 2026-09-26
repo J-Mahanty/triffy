@@ -2222,3 +2222,9 @@ def test_a_bare_yes_is_not_treated_as_a_failed_route(eng):
 
     # "thanks" must still close a conversation rather than being read as a yes.
     assert "any time" in brain.handle("thanks", "yes-user").lower()
+
+
+def test_live_engine_has_one_clock(london):
+    """Without replay, the live engine's clock is the real time."""
+    import time
+    assert abs(london.now() - time.time()) < 5
