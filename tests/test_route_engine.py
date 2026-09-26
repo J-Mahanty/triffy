@@ -2238,3 +2238,14 @@ def test_london_chat_follows_the_engine_clock(london, monkeypatch):
     five_pm = datetime(2026, 9, 19, 17, 0, tzinfo=ZoneInfo("Europe/London")).timestamp()
     monkeypatch.setattr(london, "now", lambda: five_pm)
     assert LiveChatEngine(london).clock == "17:00"
+
+
+def test_replay_time_is_read_as_london_time():
+    from datetime import datetime, timezone
+    from route_engine.live_engine import parse_replay
+    # 17:30 in London on 25 Sep 2026 is 16:30 UTC (British Summer Time).
+    assert parse_replay("2026-09-25 17:30") == datetime(
+        2026, 9, 25, 16, 30, tzinfo=timezone.utc).timestamp()
+    assert parse_replay("") is None and parse_replay(None) is None
+    with pytest.raises(ValueError):
+        parse_replay("yesterday at five")

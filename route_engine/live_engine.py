@@ -30,8 +30,11 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import time
 from dataclasses import dataclass
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import numpy as np
 
@@ -50,6 +53,24 @@ from .simulator import fmt_clock, parse_clock
 # every few minutes; beyond ~25 minutes a reading says more about the past than
 # the present.
 MAX_OBS_AGE_S = 1500.0
+
+# Replay: treat a recorded moment as 'now', e.g. TRIFFY_REPLAY="2026-09-25 17:30"
+# (London time). The clock then runs forward from there in real time, so the
+# recording plays like a film: readings 'arrive' as they did on the day.
+LONDON = ZoneInfo("Europe/London")
+
+
+def parse_replay(text) -> float | None:
+    """'YYYY-MM-DD HH:MM' in London time -> Unix time; empty -> None."""
+    text = (text or "").strip()
+    if not text:
+        return None
+    try:
+        moment = datetime.strptime(text, "%Y-%m-%d %H:%M")
+    except ValueError:
+        raise ValueError("Replay time must look like 2026-09-25 17:30 "
+                         "(London time), not %r" % text) from None
+    return moment.replace(tzinfo=LONDON).timestamp()
 
 
 # ---------------------------------------------------------------------------
@@ -310,8 +331,12 @@ class LiveEngine:
     """Routing driven entirely by real measurements."""
 
     def __init__(self, city: str = "lon", max_cameras: int = 172,
-                 obs_path=OBS_PATH):
+                 obs_path=OBS_PATH, replay_at: float | None = None):
         self.city = city
+        # Replay moment: an explicit argument, else TRIFFY_REPLAY, else live.
+        self.replay_at = (replay_at if replay_at is not None
+                          else parse_replay(os.environ.get("TRIFFY_REPLAY")))
+        self._clock_started = time.time()
         self.net = load_network(city)
         self.obs_path = obs_path
 
@@ -338,8 +363,11 @@ class LiveEngine:
         """The moment the engine treats as 'now' (Unix time).
 
         Everything that asks what time it is goes through here, so the
-        engine can be pointed at another moment in one place.
+        engine can be pointed at another moment in one place. In replay it
+        starts at the replay moment and advances in real time.
         """
+        if self.replay_at is not None:
+            return self.replay_at + (time.time() - self._clock_started)
         return time.time()
 
     # -- ingest -------------------------------------------------------------
