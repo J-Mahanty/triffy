@@ -61,7 +61,7 @@ import time
 from collections import defaultdict
 
 from .collector import OBS_PATH
-from .config import DATA
+from .config import DATA, repo_path
 
 SEC_PER_DAY = 86400.0
 
@@ -472,7 +472,7 @@ def run(horizon_s: float = 1200.0, split: float = 0.6, tol_s: float = 150.0,
         # Provenance travels with the numbers. Anything badged REAL DATA in the
         # UI must be checkable rather than assumed, so we record which file the
         # series came from and whether that is the collector's own log.
-        "source": str(src),
+        "source": repo_path(src),
         "from_collector": bool(src == OBS_PATH),
         "generated_at": time.time(),
         "generated_at_local": time.strftime("%Y-%m-%d %H:%M:%S"),
