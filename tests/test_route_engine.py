@@ -1086,7 +1086,7 @@ def test_benchmark_sampling_is_reproducible_and_bounded(eng):
 
 
 def test_camera_measurement_on_a_real_clip(monkeypatch):
-    """YOLO11 + ByteTrack on a real 40-frame TfL clip, on the CPU (the GPU
+    """YOLO11 + tracking on a real 40-frame TfL clip, on the CPU (the GPU
     belongs to the collector)."""
     pytest.importorskip("ultralytics")
     from route_engine.livecams import LiveCameraReader, LiveCamera
