@@ -177,6 +177,14 @@ def test_empty_settings_fall_back_to_the_defaults():
     assert out.stdout.split() == ["kol", "http://127.0.0.1:8000"], out.stderr
 
 
+def test_saved_paths_are_relative_to_the_repo():
+    from route_engine.collector import OBS_PATH
+    from route_engine.config import repo_path
+    assert repo_path(OBS_PATH) == "data/live_observations.jsonl"
+    # Anything outside the repo is left as it is.
+    assert repo_path("/somewhere/else.json").endswith("else.json")
+
+
 def test_eta_distribution_is_ordered(eng):
     plan = eng.plan("Sealdah", "Victoria Memorial", user_id="rider")
     r = plan.best

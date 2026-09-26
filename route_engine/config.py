@@ -11,6 +11,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "data"
+
+
+def repo_path(path) -> str:
+    """``path`` relative to the repo (e.g. ``data/benchmark.json``) when it is
+    inside it, so saved results never record one machine's folder layout."""
+    try:
+        return Path(path).resolve().relative_to(ROOT).as_posix()
+    except ValueError:
+        return str(path)
 WEB = ROOT / "web"
 DATA.mkdir(exist_ok=True)
 
