@@ -1,0 +1,63 @@
+# Build the server containers and check live London end to end, on a fresh
+# Linux machine: the collector must read real TfL cameras, and the website must
+# serve routes informed by them. The same compose file the server runs.
+name: Server stack
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - Dockerfile
+      - Dockerfile.collector
+      - docker-compose.yml
+      - requirements.txt
+      - requirements-vision.txt
+      - route_engine/**
+      - data/collector_ids_*.txt
+      - .github/workflows/server-stack.yml
+
+jobs:
+  live-london:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COLLECTOR_A_CAMERAS: "6"     # a 4-core runner: a few cameras each
+      COLLECTOR_B_CAMERAS: "6"
+      COLLECTOR_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the website and collector images
+        run: docker compose build web collector-a collector-b
+
+      - name: Start them
+        run: docker compose up -d web collector-a collector-b
+
+      - name: Wait for live London
+        run: |
+          for i in $(seq 1 60); do
+            n=$(curl -s --max-time 60 http://localhost:42069/api/live/state \
+                | python3 -c "import sys, json; print(json.load(sys.stdin)['stats']['cameras_reporting'] or 0)" \
+                2>/dev/null || echo 0)
+            echo "check $i: $n cameras reporting"
+            if [ "$n" -gt 0 ]; then exit 0; fi
+            sleep 20
+          done
+          echo "no live readings after 20 minutes"; exit 1
+
+      - name: Plan a live route
+        run: |
+          curl -sf --max-time 120 -X POST http://localhost:42069/api/live/plan \
+               -H 'Content-Type: application/json' \
+               -d '{"origin": "Victoria", "destination": "Waterloo"}' \
+            | python3 -c "import sys, json; r = json.load(sys.stdin)['routes'][0]; print(round(r['mean_s'] / 60), 'min;', r['live_share'])"
+
+      - name: Viewers cannot change the site
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:42069/api/clock \
+                 -H 'Content-Type: application/json' -d '{"time": "03:00"}')
+          echo "POST /api/clock -> $code"; test "$code" = 403
+
+      - name: Logs
+        if: always()
+        run: docker compose logs --tail 80 web collector-a collector-b
