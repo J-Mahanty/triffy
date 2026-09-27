@@ -359,100 +359,330 @@ body:not(.drawer-off) .leaflet-right {
   color: var(--text); 
 }
 
-.field { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; }
-.field label { font-size: 12px; font-weight: 500; color: var(--text-muted); }
+.field { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 5px; 
+  margin-top: 12px; 
+}
+
+.field label { 
+  font-size: 12px; 
+  font-weight: 500; 
+  color: var(--text-muted); 
+}
+
 .field input, .field select, .inject input {
-  width: 100%; min-width: 0;    /* grid children keep their intrinsic width otherwise */
-  height: 40px; padding: 0 12px; border-radius: var(--radius-control);
-  background: var(--surface-hover); border: 1px solid transparent;
+  width: 100%; 
+  min-width: 0;    
+  height: 40px; 
+  padding: 0 12px; 
+  border-radius: var(--radius-control);
+  background: var(--surface-hover); 
+  border: 1px solid transparent;
   transition: border-color .15s, background-color .15s, box-shadow .15s;
 }
-.field input:hover, .field select:hover, .inject input:hover { background-color: var(--surface-sunken); }
-.field input:focus, .field select:focus, .inject input:focus, .od input:focus {
-  outline: none; background-color: var(--surface); border-color: var(--blue); box-shadow: var(--focus);
+
+.field input:hover, .field select:hover, .inject input:hover { 
+  background-color: var(--surface-sunken); 
 }
-.field select { appearance: none; cursor: pointer; padding-right: 34px;
+
+.field input:focus, .field select:focus, .inject input:focus, .od input:focus {
+  outline: none; 
+  background-color: var(--surface); 
+  border-color: var(--blue); 
+  box-shadow: var(--focus);
+}
+
+.field select { 
+  appearance: none; 
+  cursor: pointer; 
+  padding-right: 34px;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2345515e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 10px center; background-size: 16px; }
-::placeholder { color: var(--text-faint); opacity: 1; }
+  background-repeat: no-repeat; 
+  background-position: right 10px center; 
+  background-size: 16px; 
+}
+
+::placeholder { 
+  color: var(--text-faint); 
+  opacity: 1; 
+}
 
 .badge {
-  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px;
-  border-radius: 999px; font-size: 11.5px; font-weight: 600; white-space: nowrap;
+  display: inline-flex; 
+  align-items: center; 
+  gap: 6px; 
+  height: 22px; 
+  padding: 0 9px;
+  border-radius: 999px; 
+  font-size: 11.5px; 
+  font-weight: 600; 
+  white-space: nowrap;
 }
-.badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; }
-.badge.real { background: var(--live-soft); color: var(--live); }
-.badge.real::before { background: var(--live); }
-/* Simulated is hatched, not only grey, so the difference survives a washed-out
-   screen and colour blindness. */
-.badge.sim { background: repeating-linear-gradient(135deg, var(--sim-soft) 0 4px, #e3e6ea 4px 6px);
-  color: var(--sim); }
-.badge.sim::before { background: transparent; border: 1.5px dashed var(--sim); width: 5px; height: 5px; }
+
+.badge::before { 
+  content: ""; 
+  width: 7px; 
+  height: 7px; 
+  border-radius: 50%; 
+}
+
+.badge.real { 
+  background: var(--live-soft); 
+  color: var(--live); 
+}
+
+.badge.real::before { 
+  background: var(--live); 
+}
+
+/* Simulated */
+
+.badge.sim { 
+  background: repeating-linear-gradient(135deg, var(--sim-soft) 0 4px, #e3e6ea 4px 6px);
+  color: var(--sim); 
+}
+
+.badge.sim::before { 
+  background: transparent; 
+  border: 1.5px dashed var(--sim); 
+  width: 5px; 
+  height: 5px; 
+}
 
 /* ---------- plan sheet ---------- */
 
-.plan { top: var(--gap); left: var(--gap); bottom: var(--gap); width: var(--plan-w); padding: 18px 20px 22px; }
+.plan { 
+  top: var(--gap); 
+  left: var(--gap); 
+  bottom: var(--gap); 
+  width: var(--plan-w); 
+  padding: 18px 20px 22px; 
+}
 
-.plan-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.brand { display: flex; align-items: center; gap: 10px; }
-/* The mark is a green tile (the mascot's own green, not --blue or --live) with
-   a small white card floating on it, so the mascot's head photo - which comes
-   off a white background - reads as an intentional sticker instead of a stray
-   white square. */
+.plan-head { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  gap: 12px; 
+}
+
+.brand { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+}
+
+/* Mascot */
+
 .brand-mark {
-  display: grid; place-items: center; width: 34px; height: 34px; padding: 3px;
-  border-radius: 10px; background: linear-gradient(145deg, var(--mascot), var(--mascot-shade));
+  display: grid; 
+  place-items: center; 
+  width: 34px; 
+  height: 34px; 
+  padding: 3px;
+  border-radius: 10px; 
+  background: linear-gradient(145deg, var(--mascot), var(--mascot-shade));
 }
-.brand-mark img {
-  display: block; width: 100%; height: 100%; object-fit: contain;
-  border-radius: 7px; background: #fff;
-}
-.brand-name { font-size: 20px; font-weight: 700; letter-spacing: -.02em; }
 
-.seg { display: flex; padding: 3px; gap: 2px; background: var(--surface-hover); border-radius: 12px;
-  border: 0; margin: 0; min-width: 0; }   /* a fieldset: drop its default frame */
+.brand-mark img {
+  display: block; 
+  width: 100%; 
+  height: 100%; 
+  object-fit: contain;
+  border-radius: 7px; 
+  background: #fff;
+}
+
+.brand-name { 
+  font-size: 20px; 
+  font-weight: 700; 
+  letter-spacing: -.02em; 
+}
+
+.seg { 
+  display: flex; 
+  padding: 3px; 
+  gap: 2px; 
+  background: var(--surface-hover); 
+  border-radius: 12px;
+  border: 0; 
+  margin: 0; 
+  min-width: 0; 
+}
+
+/* Default Frame*/
+
 .seg button {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
-  border: none; background: transparent; cursor: pointer; border-radius: 9px;
-  padding: 5px 11px; font-size: 13px; font-weight: 600; color: var(--text-muted);
+  display: flex; 
+  flex-direction: column; 
+  align-items: flex-start; 
+  gap: 1px;
+  border: none; 
+  background: transparent; 
+  cursor: pointer; 
+  border-radius: 9px;
+  padding: 5px 11px; 
+  font-size: 13px; 
+  font-weight: 600; 
+  color: var(--text-muted);
   transition: background-color .18s var(--ease), color .18s, box-shadow .18s;
 }
-.seg button small { font-size: 10.5px; font-weight: 500; color: var(--text-faint); }
-.seg button:hover { color: var(--text); }
-.seg button.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgba(17,24,32,.1), 0 1px 6px rgba(17,24,32,.06); }
-.seg button[data-mode="live"].on small { color: var(--live); }
+
+.seg button small { 
+  font-size: 10.5px; 
+  font-weight: 500; 
+  color: var(--text-faint); 
+}
+
+.seg button:hover { 
+  color: var(--text); 
+}
+
+.seg button.on { 
+  background: var(--surface); 
+  color: var(--text); 
+  box-shadow: 0 1px 2px rgba(17,24,32,.1), 0 1px 6px rgba(17,24,32,.06); 
+}
+
+.seg button[data-mode="live"].on small { 
+  color: var(--live); 
+}
 
 .provenance {
-  display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; padding: 11px 12px;
-  border-radius: var(--radius-card); font-size: 13px; line-height: 1.4;
+  display: flex; 
+  gap: 10px; 
+  align-items: flex-start; 
+  margin-top: 16px; 
+  padding: 11px 12px;
+  border-radius: var(--radius-card); 
+  font-size: 13px; 
+  line-height: 1.4;
 }
-.provenance svg { margin-top: 1px; }
-.provenance b { font-weight: 600; }
-body[data-mode="sim"] .provenance { background: repeating-linear-gradient(135deg, var(--sim-soft) 0 6px, #e9ecf0 6px 8px); color: #36404b; }
-body[data-mode="live"] .provenance { background: var(--live-soft); color: #0a5c35; }
-body[data-mode="live"] .provenance svg { color: var(--live); }
-.city { margin: 8px 2px 0; font-size: 12px; color: var(--text-faint); }
-.routed .prov-more, .routed .city { display: none; }
-.routed .provenance { padding: 9px 12px; }
-.routed .search { margin-top: 12px; }
 
-.search { margin-top: 14px; }
-.od { position: relative; display: flex; align-items: stretch; gap: 10px;
-  background: var(--surface-hover); border-radius: var(--radius-card); padding: 6px 6px 6px 14px; }
-.od-rail { display: flex; flex-direction: column; align-items: center; padding: 16px 0; }
-.od-dot { width: 10px; height: 10px; border-radius: 50%; border: 2.5px solid var(--text); background: var(--surface); }
-.od-line { flex: 1; width: 0; border-left: 2px dotted var(--line-strong); margin: 4px 0; }
-.od-pin { width: 10px; height: 10px; border-radius: 2px; background: var(--blue); }
-.od-fields { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; }
+.provenance svg { 
+  margin-top: 1px; 
+}
+
+.provenance b { 
+  font-weight: 600; 
+}
+
+body[data-mode="sim"] .provenance { 
+  background: repeating-linear-gradient(135deg, var(--sim-soft) 0 6px, #e9ecf0 6px 8px); 
+  color: #36404b; 
+}
+
+body[data-mode="live"] .provenance { 
+  background: var(--live-soft); 
+  color: #0a5c35; 
+}
+
+body[data-mode="live"] .provenance svg { 
+  color: var(--live); 
+}
+
+.city { 
+  margin: 8px 2px 0; 
+  font-size: 12px; 
+  color: var(--text-faint); 
+}
+
+.routed .prov-more, .routed .city { 
+  display: none; 
+}
+
+.routed .provenance { 
+  padding: 9px 12px; 
+}
+
+.routed .search { 
+  margin-top: 12px; 
+}
+
+.search { 
+  margin-top: 14px; 
+}
+
+.od { 
+  position: relative; 
+  display: flex; 
+  align-items: stretch; 
+  gap: 10px;
+  background: var(--surface-hover); 
+  border-radius: var(--radius-card); 
+  padding: 6px 6px 6px 14px; 
+}
+
+.od-rail { 
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  padding: 16px 0; 
+}
+
+.od-dot { 
+  width: 10px; 
+  height: 10px; 
+  border-radius: 50%; 
+  border: 2.5px solid var(--text); 
+  background: var(--surface); 
+}
+
+.od-line { 
+  flex: 1; 
+  width: 0; 
+  border-left: 2px dotted var(--line-strong); 
+  margin: 4px 0; 
+}
+
+.od-pin { 
+  width: 10px; 
+  height: 10px; 
+  border-radius: 2px; 
+  background: var(--blue); 
+}
+
+.od-fields { 
+  flex: 1; 
+  display: flex; 
+  flex-direction: column; 
+  min-width: 0; 
+  position: relative; 
+}
+
 .od input {
-  height: 42px; padding: 0 10px; border: 1px solid transparent; border-radius: var(--radius-control);
-  background: transparent; font-size: 15px; font-weight: 500;
+  height: 42px; 
+  padding: 0 10px; 
+  border: 1px solid transparent; 
+  border-radius: var(--radius-control);
+  background: transparent; 
+  font-size: 15px; 
+  font-weight: 500;
 }
-.od-fields::after { content: ""; position: absolute; left: 10px; right: 0; top: 50%;
-  border-top: 1px solid var(--line-strong); pointer-events: none; }
-.od-swap { align-self: center; background: var(--surface); box-shadow: 0 1px 2px rgba(17,24,32,.1); }
 
-.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.od-fields::after { 
+  content: ""; 
+  position: absolute; 
+  left: 10px; 
+  right: 0; 
+  top: 50%;
+  border-top: 1px solid var(--line-strong); 
+  pointer-events: none; 
+}
+
+.od-swap { 
+  align-self: center; 
+  background: var(--surface); 
+  box-shadow: 0 1px 2px rgba(17,24,32,.1); 
+}
+
+.opts { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 10px; 
+}
 
 /* After routing, the form folds into one editable line so the answer, the
    alternatives and the baselineshot comparison all fit on the first screen. */
