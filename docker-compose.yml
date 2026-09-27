@@ -1,79 +1,18 @@
-# What the two live London collectors share (see collector-a / collector-b).
-x-collector: &collector
-  build:
-    context: .
-    dockerfile: Dockerfile.collector
-  restart: unless-stopped
-  environment:
-    - OMP_NUM_THREADS=${COLLECTOR_THREADS:-10}
-  # A quarter of the website's CPU priority, so pages stay quick while the
-  # collectors are busy. A weight, not a cap: it never fails on a small server.
-  cpu_shares: 256
-  volumes:
-    - triffy-data:/app/data
-
 services:
-  bot:
+  web:
     build: .
-    command: ["python", "discordBot/main.py"]
-    restart: unless-stopped
-    depends_on:
-      - redis
+    ports:
+      - "${APP_PORT}:35000"
+
+
     environment:
       - SERVER_BOT_TOKEN
       - CHANNEL_ID
+      - APP_PORT
       - REDIS_HOST
       - REDIS_PORT
       - TRIFFY_CITY
       - TRIFFY_MAP_BASE
-
-  web:
-    build: .
-    command: ["python", "-m", "route_engine.api"]
-    restart: unless-stopped
-    depends_on:
-      - redis
-    ports:
-      - "${APP_PORT:-42069}:${WEB_PORT:-42069}"
-    # The collector's readings arrive here; see triffy-data below.
-    volumes:
-      - triffy-data:/app/data
-    environment:
-      - TRIFFY_HOST=0.0.0.0
-      - TRIFFY_PORT=${WEB_PORT:-42069}
-      # A public site: visitors plan routes but cannot change shared settings
-      # or make the server run camera analysis. TRIFFY_READONLY=0 turns it off.
-      - TRIFFY_READONLY=${TRIFFY_READONLY:-1}
-      - REDIS_HOST
-      - REDIS_PORT
-      - TRIFFY_CITY
-      - TRIFFY_MAP_BASE
-
-  # Live London: two collectors read all 172 mapped TfL cameras between them
-  # (the same split as the laptop that recorded data/), with YOLO11 on the CPU,
-  # every 6 minutes, appending to data/live_observations.jsonl for the website.
-  # Each camera costs about 34 CPU-seconds a reading, so both together keep
-  # about 16 cores busy. One process cannot read 172 cameras in 6 minutes,
-  # hence two, each held to COLLECTOR_THREADS threads so they do not fight
-  # over the same cores.
-  collector-a:
-    <<: *collector
-    command: ["python", "-m", "route_engine.collector", "--city", "lon",
-              "--ids", "data/collector_ids_A.txt", "--cameras", "${COLLECTOR_A_CAMERAS:-92}",
-              "--interval", "360", "--device", "cpu"]
-
-  collector-b:
-    <<: *collector
-    command: ["python", "-m", "route_engine.collector", "--city", "lon",
-              "--ids", "data/collector_ids_B.txt", "--cameras", "${COLLECTOR_B_CAMERAS:-80}",
-              "--interval", "360", "--device", "cpu"]
 
   redis:
     image: redis:alpine
-
-# data/ shared by the website and the collector. The first start fills it from
-# the image (road maps and the recorded readings); after that it keeps the
-# collected readings across rebuilds. To take new road maps or recorded data
-# from the repo, remove it once: docker compose down && docker volume rm <project>_triffy-data
-volumes:
-  triffy-data:
