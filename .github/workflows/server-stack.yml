@@ -1,0 +1,80 @@
+# Build the server containers and check live London end to end, on a fresh
+# Linux machine: the collector must read real TfL cameras, and the website must
+# serve routes informed by them. The same compose file the server runs.
+name: Server stack
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - Dockerfile
+      - Dockerfile.collector
+      - docker-compose.yml
+      - requirements.txt
+      - requirements-vision.txt
+      - route_engine/**
+      - data/collector_ids_*.txt
+      - .github/workflows/server-stack.yml
+
+jobs:
+  live-london:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COLLECTOR_A_CAMERAS: "6"     # a 4-core runner: a few cameras each
+      COLLECTOR_B_CAMERAS: "6"
+      COLLECTOR_THREADS: "2"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the website and collector images
+        run: docker compose build web collector-a collector-b
+
+      - name: Start them
+        run: |
+          echo "STARTED=$(date +%s)" >> "$GITHUB_ENV"
+          docker compose up -d web collector-a collector-b
+
+      # Readings in the repo's recorded data can be recent enough to count as
+      # live, so "cameras reporting" alone proves nothing about the collectors.
+      # Count readings written after the stack started, as the website's own
+      # container sees the shared file: collector -> volume -> website.
+      - name: Wait for the collectors' readings to reach the website
+        run: |
+          for i in $(seq 1 60); do
+            n=$(docker compose exec -T web python -c "
+          import json
+          n = 0
+          for line in open('/app/data/live_observations.jsonl', encoding='utf-8'):
+              try:
+                  n += json.loads(line)['t_wall'] > $STARTED
+              except Exception:
+                  pass
+          print(n)" 2>/dev/null || echo 0)
+            echo "check $i: $n new readings visible to the website"
+            if [ "$n" -gt 0 ]; then exit 0; fi
+            sleep 20
+          done
+          echo "no new readings after 20 minutes"; exit 1
+
+      - name: Live London is served
+        run: |
+          curl -s --max-time 60 http://localhost:42069/api/live/state \
+            | python3 -c "import sys, json; s = json.load(sys.stdin)['stats']; print(s['cameras_reporting'], 'cameras reporting; newest reading', s['data_age_s'], 's old')"
+
+      - name: Plan a live route
+        run: |
+          curl -sf --max-time 120 -X POST http://localhost:42069/api/live/plan \
+               -H 'Content-Type: application/json' \
+               -d '{"origin": "Victoria", "destination": "Waterloo"}' \
+            | python3 -c "import sys, json; r = json.load(sys.stdin)['routes'][0]; print(round(r['mean_s'] / 60), 'min;', r['live_share'])"
+
+      - name: Viewers cannot change the site
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:42069/api/clock \
+                 -H 'Content-Type: application/json' -d '{"time": "03:00"}')
+          echo "POST /api/clock -> $code"; test "$code" = 403
+
+      - name: Logs
+        if: always()
+        run: docker compose logs --tail 80 web collector-a collector-b

@@ -90,7 +90,12 @@ def fetch_registry(force: bool = False, max_age_s: float = 86400.0) -> list:
             lat=float(c.get("lat", 0.0)), lon=float(c.get("lon", 0.0)),
             image_url=img, video_url=vid,
         ))
-    REGISTRY_CACHE.write_text(json.dumps([c.as_dict() for c in out]), encoding="utf-8")
+    # Write a private copy, then swap it in whole: on a fresh server the website
+    # and both collectors fetch at the same moment, and a plain write lets one
+    # of them read a half-written file and crash.
+    tmp = REGISTRY_CACHE.with_name("%s.%d.tmp" % (REGISTRY_CACHE.name, os.getpid()))
+    tmp.write_text(json.dumps([c.as_dict() for c in out]), encoding="utf-8")
+    os.replace(tmp, REGISTRY_CACHE)
     return out
 
 

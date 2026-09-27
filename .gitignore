@@ -55,6 +55,8 @@ data/cv_observation.json
 # Logs.
 *.log
 data/*.err
+# The laptop tunnel's output (scripts/host.ps1).
+data/tunnel.out
 
 # ---------------------------------------------------------------------------
 # Deliberately COMMITTED, for anyone wondering
