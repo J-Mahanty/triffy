@@ -388,6 +388,8 @@ body[data-mode="live"] .provenance svg { color: var(--live); }
   box-shadow: 0 0 0 0 rgba(11,138,77,.5); animation: pulse 2s var(--ease) infinite; }
 .chip-btn { background: var(--surface); box-shadow: var(--shadow-chip); border-radius: 999px; width: 40px; height: 40px; }
 .chip-btn[aria-expanded="false"] { color: var(--blue); }
+.chip-link { text-decoration: none; cursor: pointer; }
+.chip-link:hover, .chip-link:focus-visible { color: var(--text); }
 
 /* ---------- evidence drawer ---------- */
 
