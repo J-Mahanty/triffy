@@ -12,7 +12,9 @@ import json
 import mimetypes
 import os
 import socket
+from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 # Windows' MIME registry has no entry for .woff2, so the self-hosted web font
 # would be served as application/octet-stream.
@@ -36,11 +38,41 @@ ENGINE: TriffyEngine | None = None
 LIVE = None
 
 
+# Kolkata's traffic is simulated, but its clock is real: the simulation runs at
+# the time on the viewer's watch, so "leave now" means now. TRIFFY_SIM_CLOCK
+# pins it instead (e.g. "18:30" to show the evening rush whatever the hour),
+# and so does setting a time through /api/clock - a chosen time is never
+# overridden.
+SIM_CLOCK = (os.environ.get("TRIFFY_SIM_CLOCK") or "").strip()
+KOLKATA = ZoneInfo("Asia/Kolkata")
+FOLLOWING = None      # the engine that follows the real clock, if any
+
+
+def kolkata_now_s() -> float:
+    """Seconds past midnight in Kolkata, now."""
+    t = datetime.now(KOLKATA)
+    return t.hour * 3600.0 + t.minute * 60.0 + t.second
+
+
 def engine() -> TriffyEngine:
-    global ENGINE
+    global ENGINE, FOLLOWING
     if ENGINE is None:
-        ENGINE = TriffyEngine()
+        ENGINE = TriffyEngine(start_clock=SIM_CLOCK or fmt_clock(kolkata_now_s()))
+        FOLLOWING = None if SIM_CLOCK else ENGINE
+    if ENGINE is FOLLOWING:
+        _catch_up(ENGINE)
     return ENGINE
+
+
+def _catch_up(eng: TriffyEngine) -> None:
+    """Move the simulation on to the real time once it is a minute behind.
+
+    The difference is taken the short way round the clock face, so 23:59 to
+    00:01 is two minutes forward, not a day back.
+    """
+    behind = (kolkata_now_s() - eng.now_s % 86400 + 43200) % 86400 - 43200
+    if behind >= 60:
+        eng.advance(behind)
 
 
 def live_engine():
@@ -165,6 +197,7 @@ def api_state():
     return {
         "clock": eng.clock,
         "now_s": round(eng.now_s),
+        "real_time": eng is FOLLOWING,
         "ids": [int(e) for e in keep],
         "cong": [round(float(cong[e]), 3) for e in keep],
         "kph": [round(float(st.kph[e]), 1) for e in keep],
@@ -216,7 +249,9 @@ def api_leaveby(req: LeaveByReq):
 
 @app.post("/api/clock")
 def api_clock(req: ClockReq):
+    global FOLLOWING
     eng = engine()
+    FOLLOWING = None      # someone chose a time: stop following the real one
     if req.time:
         eng.set_clock(req.time)
     elif req.advance_s:
@@ -458,6 +493,8 @@ only reads.
 
 # Endpoints that change state everyone shares, or write to disk.
 WRITES_SHARED_STATE = ("/api/clock", "/api/incident", "/api/feedback")
+# Endpoints that run computer vision on request (a camera's still or clip).
+VISION_ON_DEMAND = "/api/livecam/"
 
 
 @app.middleware("http")
@@ -474,6 +511,14 @@ async def _guard_readonly(request, call_next):
             content={"detail": "Viewer mode: the demo clock, incidents and "
                                "feedback are controlled from the presenter's "
                                "machine. Routing and the live data are open."})
+    # Each call here runs YOLO on the host's own machine, and the site no longer
+    # shows camera video, so viewers of a public site do not get to start it.
+    if READONLY and request.url.path.startswith(VISION_ON_DEMAND):
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Viewer mode: camera analysis runs only in the "
+                               "host's collectors. Routing and the live data "
+                               "are open."})
     return await call_next(request)
 
 

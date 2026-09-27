@@ -1,0 +1,32 @@
+# The live London collector: YOLO11 on Transport for London's traffic cameras,
+# on the CPU. A separate image so the website and the bot stay small; this one
+# carries PyTorch, as its CPU-only build (~700 MB, against ~2.5 GB with CUDA).
+# The Debian release is named, not implied: the system package names below are
+# per-release (trixie renamed libglib2.0-0 to libglib2.0-0t64), and plain
+# "3.12-slim" moves to a new release without warning.
+FROM python:3.12-slim-trixie
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# OpenCV, which Ultralytics needs, links against these.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends libgl1 libglib2.0-0t64 \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY requirements.txt requirements-vision.txt ./
+# PyTorch's CPU build first, from PyTorch's own index; then everything else
+# from PyPI, which finds torch already installed and leaves it alone.
+RUN pip install --no-cache-dir --index-url https://download.pytorch.org/whl/cpu torch torchvision \
+ && pip install --no-cache-dir -r requirements-vision.txt
+
+# The YOLO11 weights, fetched now rather than on the collector's first run.
+RUN python -c "from ultralytics import YOLO; YOLO('yolo11n.pt')"
+
+COPY route_engine/ ./route_engine/
+COPY data/ ./data/
+
+# docker-compose.yml sets the real command (how many cameras, and so on).
+CMD ["python", "-m", "route_engine.collector", "--city", "lon", "--near-routes", "--cameras", "30", "--interval", "300", "--device", "cpu"]
