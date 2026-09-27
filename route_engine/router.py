@@ -37,6 +37,40 @@ from .network import RoadNetwork
 # understates route-level spread, so we inflate the total.
 CORRELATION_INFLATION = 1.28
 
+# Congestion bands for colouring a route along its length: free flowing,
+# slowing, congested, near gridlock. The same cut-offs the dashboard uses for
+# the traffic layer, read from speed through the live engine's speed model
+# (speed = free * (1 - 0.8 * congestion)), so a route and the roads under it
+# are coloured by the same rule.
+TRAFFIC_BANDS = (0.30, 0.52, 0.72)
+
+
+def traffic_level(speed_ratio: float) -> int:
+    """0 (free flowing) .. 3 (near gridlock), from speed as a share of free flow."""
+    congestion = (1.0 - speed_ratio) / 0.8
+    return sum(congestion >= b for b in TRAFFIC_BANDS)
+
+
+def _traffic_runs(net: RoadNetwork, edges, ratios) -> list:
+    """The route as consecutive runs of one traffic level, each a single line.
+
+    ``n`` is how many edges a run covers, so the runs can be checked against
+    the route they came from.
+    """
+    if not ratios or len(ratios) != len(edges):
+        return []
+    runs: list[dict] = []
+    for e, ratio in zip(edges, ratios):
+        level = traffic_level(ratio)
+        g = net.egeom[e]
+        if runs and runs[-1]["level"] == level:
+            pts = runs[-1]["g"]
+            pts.extend(g[1:] if pts[-1] == g[0] else g)
+            runs[-1]["n"] += 1
+        else:
+            runs.append({"level": level, "n": 1, "g": list(g)})
+    return runs
+
 
 @dataclass
 class Step:
@@ -66,6 +100,9 @@ class Route:
     # snapshot baseline this differs from ``mean_s``, and the gap is precisely
     # the ETA error caused by planning against frozen conditions.
     claimed_s: float = 0.0
+    # Each edge's forecast speed as a share of its free-flow speed, at the
+    # moment the traveller reaches it (1.0 = free flowing).
+    speed_ratio: list = field(default_factory=list)
 
     # -- ETA distribution ---------------------------------------------------
     # Travel time is right-skewed: you can always be much later than expected,
@@ -135,6 +172,10 @@ class Route:
             "steps": [s.as_dict() for s in self.steps],
             "geometry": self.geometry(net),
             "roads": _main_roads(net, self.edges),
+            # The route in runs of similar traffic, for colouring it along its
+            # length as map apps do - but by the traffic expected when you get
+            # to each stretch, not the traffic there now.
+            "traffic": _traffic_runs(net, self.edges, self.speed_ratio),
         }
 
 
@@ -326,11 +367,31 @@ class Router:
                 penalty[edges] *= DIVERSITY_PENALTY
                 continue
             r.steps = self._directions(edges, depart_s)
+            r.speed_ratio = self._speed_ratios(edges, depart_s)
             out.append(r)
             penalty[edges] *= DIVERSITY_PENALTY
 
         for i, r in enumerate(out):
             r.label = _label_route(r, out, i)
+        return out
+
+    def _speed_ratios(self, edges, depart_s: float) -> list:
+        """Each edge's forecast speed as a share of free flow, when reached.
+
+        Advances the clock exactly as ``_evaluate`` does, so each stretch is
+        judged at the moment the traveller is actually on it.
+        """
+        net, prof = self.net, self.profile
+        t = depart_s
+        out = []
+        prev = None
+        for e in edges:
+            out.append(round(prof.speed(e, t) / max(float(net.ekph[e]), 1.0), 3))
+            mean, _ = prof.traverse_s(net, e, t)
+            if prev is not None:
+                mean += self._turn_cost(prev, e)
+            t += mean
+            prev = e
         return out
 
     def _evaluate(self, edges, depart_s: float):
@@ -354,6 +415,7 @@ class Router:
                   sigma_s=math.sqrt(var),
                   distance_m=float(sum(self.net.elen[e] for e in edges)))
         r.steps = self._directions(edges, depart_s)
+        r.speed_ratio = self._speed_ratios(edges, depart_s)
         return r
 
     # -- turn-by-turn -------------------------------------------------------
@@ -421,6 +483,22 @@ def _compact_steps(steps, min_m: float = 130.0) -> list:
             prev.edges.extend(s.edges)
             continue
         out.append(s)
+    # Absorbing a short hop can leave the same road twice in a row ("Bear left
+    # onto Mayo Road", then again 500 m later). If the road just carries on,
+    # that is one instruction.
+    kept = [out[0]]
+    for s in out[1:]:
+        prev = kept[-1]
+        if s.road == prev.road and s.instruction.startswith(("Continue", "Bear")):
+            prev.distance_m += s.distance_m
+            prev.seconds += s.seconds
+            prev.edges.extend(s.edges)
+            continue
+        if s.road == prev.road:
+            # A real turn where the name carries on round the corner.
+            s.instruction = s.instruction.replace(" onto ", " to stay on ", 1)
+        kept.append(s)
+    out = kept
     # A tiny opening instruction is equally useless; merge it forward.
     if len(out) > 1 and out[0].distance_m < min_m:
         out[1].distance_m += out[0].distance_m

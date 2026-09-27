@@ -7,7 +7,7 @@ stream" - anyone who checked would find out, and the credibility of the whole
 real-data half rests on not overclaiming.
 
 How it works: clicking a camera starts one background job that downloads the
-clip and runs YOLO11 + ByteTrack over it. Frames go into a shared list as they
+clip and runs YOLO11 + tracking over it. Frames go into a shared list as they
 are produced, and any number of browser streams (MJPEG) read from that list,
 each paced to the clip's own frame rate - so video appears as soon as the first
 frame is tracked. Once the clip is done, the same stream loops the cached
@@ -164,7 +164,7 @@ class ClipViewer:
         from ultralytics import YOLO
 
         limit_cpu_threads()
-        model = YOLO("yolo11n.pt")   # fresh: ByteTrack state lives in the model
+        model = YOLO("yolo11n.pt")   # fresh: tracker state lives in the model
         cap = cv2.VideoCapture(str(src))
         if not cap.isOpened():
             self._fail(j, "could not decode the clip")
@@ -311,7 +311,7 @@ def _draw(frame, boxes, tracks, now_idx: int, frame_w: int):
     # Heads-up strip: what is on screen right now.
     strip = vis[0:30].copy()
     vis[0:30] = (strip * 0.35).astype(strip.dtype)
-    hud = "YOLO11 + ByteTrack   moving %d   stopped %d" % (n_mov, n_stop)
+    hud = "YOLO11 + tracking   moving %d   stopped %d" % (n_mov, n_stop)
     cv2.putText(vis, hud, (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.55,
                 (235, 235, 235), 1, cv2.LINE_AA)
     return vis

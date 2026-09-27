@@ -74,3 +74,5 @@ data/*.err
 .coverage
 coverage.xml
 .scannerwork/
+.DS_Store
+.DS_Store

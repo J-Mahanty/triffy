@@ -1,7 +1,12 @@
-# Optional: live vehicle detection on camera feeds (YOLO11 + ByteTrack).
+# Optional: live vehicle detection on camera feeds (YOLO11 + Ultralytics'
+# default tracker: TrackTrack in 8.4, the version the data was recorded with).
 # Only needed to COLLECT new traffic data or to annotate camera clips.
 # Route planning and analysis run without it, from the recorded data in data/.
 -r requirements.txt
 ultralytics>=8.3
 torch>=2.0
 lap>=0.5
+# Intel Macs only get torch up to 2.2, which predates NumPy 2
+# ("RuntimeError: Numpy is not available"). Use Python 3.12 there: torch has
+# no Intel-Mac build for Python 3.13.
+numpy<2; sys_platform == "darwin" and platform_machine == "x86_64"

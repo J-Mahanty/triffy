@@ -67,6 +67,9 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Triffy terminal client")
     ap.add_argument("--user", default="guest")
     ap.add_argument("--clock", default="18:30")
+    ap.add_argument("--replay", default="", metavar="'YYYY-MM-DD HH:MM'",
+                    help="with --live: replay recorded London traffic from this "
+                         "moment (London time) instead of live readings")
     ap.add_argument("--live", action="store_true",
                     help="answer from live London cameras instead of simulated "
                          "Kolkata (needs the collector to have run)")
@@ -89,7 +92,8 @@ def main() -> None:
         # ChatBrain expects, so there is no second parser to drift.
         from .live_chat import LiveChatEngine
         from .live_engine import LiveEngine
-        live = LiveEngine(city="lon")
+        from .live_engine import parse_replay
+        live = LiveEngine(city="lon", replay_at=parse_replay(args.replay))
         eng = LiveChatEngine(live)
         banner = ("Network: **%s** | London time **%s** | %d of %d real cameras "
                   "reporting\n"

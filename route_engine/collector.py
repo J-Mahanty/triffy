@@ -13,6 +13,7 @@ continues the same file.
 
 Usage:
     python -m route_engine.collector --cameras 24 --interval 300
+    python -m route_engine.collector --near-routes --cameras 30
     python -m route_engine.collector --status
 """
 from __future__ import annotations
@@ -142,6 +143,9 @@ def _parse_args():
     ap.add_argument("--mapped", action="store_true",
                     help="sample exactly the cameras the live engine can bind to "
                          "a road edge (avoids spending cycles on unusable feeds)")
+    ap.add_argument("--near-routes", action="store_true",
+                    help="watch the cameras closest to the demo trips' routes; "
+                         "the best choice for a small --cameras budget")
     ap.add_argument("--ids", default="",
                     help="file of camera ids (one per line) to sample exactly; "
                          "pins the set so a re-imported map cannot change it")
@@ -156,8 +160,18 @@ def _parse_args():
 
 
 def _select_cameras(args, where):
-    """The cameras to sample: mapped, spread, or pinned by --ids/--exclude."""
-    if args.mapped and where:
+    """The cameras to sample: near the demo routes, mapped, spread, or
+    pinned by --ids/--exclude."""
+    if args.near_routes and where:
+        # A few cameras spread across the city mostly watch roads no trip
+        # uses; the same number along the demo routes stays close to the
+        # answer from all of them (see docs/starting.md).
+        from .coverage import cameras_near_routes
+        keep = [i for i, _ in cameras_near_routes(args.cameras, city=where)]
+        pool = {c.id: c for c in pick_cameras(400, city=where)}
+        cams = [pool[i] for i in keep if i in pool]
+        print("Selecting the %d cameras nearest the demo routes..." % len(cams))
+    elif args.mapped and where:
         # Sample precisely the cameras that the live engine can attach to a
         # road. Anything it cannot map contributes nothing to routing, so
         # spending a YOLO pass on it every cycle is pure waste.

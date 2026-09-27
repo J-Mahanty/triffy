@@ -26,6 +26,10 @@ from .osm_import import haversine
 # "park sircus" and "sialdah" but not an unrelated word of similar length.
 TYPO_CUTOFF = 0.8
 
+# A second, stricter chance for a landmark spelt the way it sounds:
+# "Parkk Sirkus" scores 0.78 against "park circus" as written, 1.0 as said.
+SOUND_CUTOFF = 0.9
+
 
 def _norm(s: str) -> str:
     folded = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode()
@@ -38,6 +42,19 @@ def _norm(s: str) -> str:
     kept = "".join(ch if unicodedata.category(ch)[0] in "LMN" else " "
                    for ch in unicodedata.normalize("NFC", s).lower())
     return " ".join(kept.split())
+
+
+def _sound(key: str) -> str:
+    """A normalised name roughly as it is said, so spellings of one sound
+    compare equal: soft c is s, hard c / ck / q are k, ph is f, and a silent
+    h, doubled letters and spaces are dropped ("parkk sirkus" -> "parksirkus"
+    = "park circus")."""
+    k = re.sub(r"c(?=[eiy])", "s", key)
+    k = k.replace("ck", "k").replace("c", "k").replace("q", "k")
+    k = k.replace("ph", "f")
+    k = re.sub(r"h(?![aeiou])", "", k)
+    k = re.sub(r"(.)\1+", r"\1", k)
+    return k.replace(" ", "")
 
 
 @dataclass
@@ -167,6 +184,9 @@ class RoadNetwork:
 
         self.landmarks: dict[str, Place] = {}
         self._load_landmarks()
+        self._landmark_sounds: dict[str, str] = {}
+        for k in self.landmarks:
+            self._landmark_sounds.setdefault(_sound(k), k)
         # Landmarks win ties against same-named streets.
         self.places.update(self.landmarks)
         self.place_keys = list(self.places)
@@ -243,6 +263,10 @@ class RoadNetwork:
                                          cutoff=TYPO_CUTOFF)
         if near:
             return self.landmarks[near[0]], "typo"
+        near = difflib.get_close_matches(_sound(key), list(self._landmark_sounds),
+                                         n=1, cutoff=SOUND_CUTOFF)
+        if near:
+            return self.landmarks[self._landmark_sounds[near[0]]], "typo"
 
         # Substring, then token-overlap scoring: forgiving enough for chat.
         cands = ([k for k in self.place_keys if key in k or k in key]

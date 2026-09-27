@@ -56,12 +56,12 @@ class LiveChatEngine:
 
     def _midnight(self) -> float:
         """Epoch seconds of the most recent local midnight in London."""
-        now = datetime.now(LONDON)
+        now = datetime.fromtimestamp(self.live.now(), LONDON)
         return now.replace(hour=0, minute=0, second=0, microsecond=0).timestamp()
 
     @property
     def now_s(self) -> float:
-        return time.time() - self._midnight()
+        return self.live.now() - self._midnight()
 
     @property
     def clock(self) -> str:
@@ -117,7 +117,7 @@ class LiveChatEngine:
 
     def hotspots(self, limit: int = 6) -> list:
         """The most congested camera-watched roads: (label, congestion 0-1, age_s)."""
-        now = time.time()
+        now = self.live.now()
         obs = sorted(self.live.observations, key=lambda o: -o.occupancy)
         out = []
         for o in obs[:limit]:

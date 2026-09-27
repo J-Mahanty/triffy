@@ -30,8 +30,11 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import time
 from dataclasses import dataclass
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import numpy as np
 
@@ -50,6 +53,24 @@ from .simulator import fmt_clock, parse_clock
 # every few minutes; beyond ~25 minutes a reading says more about the past than
 # the present.
 MAX_OBS_AGE_S = 1500.0
+
+# Replay: treat a recorded moment as 'now', e.g. TRIFFY_REPLAY="2026-09-25 17:30"
+# (London time). The clock then runs forward from there in real time, so the
+# recording plays like a film: readings 'arrive' as they did on the day.
+LONDON = ZoneInfo("Europe/London")
+
+
+def parse_replay(text) -> float | None:
+    """'YYYY-MM-DD HH:MM' in London time -> Unix time; empty -> None."""
+    text = (text or "").strip()
+    if not text:
+        return None
+    try:
+        moment = datetime.strptime(text, "%Y-%m-%d %H:%M")
+    except ValueError:
+        raise ValueError("Replay time must look like 2026-09-25 17:30 "
+                         "(London time), not %r" % text) from None
+    return moment.replace(tzinfo=LONDON).timestamp()
 
 
 # ---------------------------------------------------------------------------
@@ -310,8 +331,12 @@ class LiveEngine:
     """Routing driven entirely by real measurements."""
 
     def __init__(self, city: str = "lon", max_cameras: int = 172,
-                 obs_path=OBS_PATH):
+                 obs_path=OBS_PATH, replay_at: float | None = None):
         self.city = city
+        # Replay moment: an explicit argument, else TRIFFY_REPLAY, else live.
+        self.replay_at = (replay_at if replay_at is not None
+                          else parse_replay(os.environ.get("TRIFFY_REPLAY")))
+        self._clock_started = time.time()
         self.net = load_network(city)
         self.obs_path = obs_path
 
@@ -332,10 +357,35 @@ class LiveEngine:
         self.data_age_s = None
         self.refresh()
 
+    # -- clock --------------------------------------------------------------
+
+    def now(self) -> float:
+        """The moment the engine treats as 'now' (Unix time).
+
+        Everything that asks what time it is goes through here, so the
+        engine can be pointed at another moment in one place. In replay it
+        starts at the replay moment and advances in real time.
+        """
+        if self.replay_at is not None:
+            return self.replay_at + (time.time() - self._clock_started)
+        return time.time()
+
+    def replay_info(self) -> dict | None:
+        """What the UI needs to label a replay honestly, or None when live."""
+        if self.replay_at is None:
+            return None
+        fmt = lambda t: datetime.fromtimestamp(t, LONDON).strftime("%Y-%m-%d %H:%M")
+        return {"from": fmt(self.replay_at), "now": fmt(self.now()),
+                "now_s": round(self.now())}
+
     # -- ingest -------------------------------------------------------------
 
-    def _latest_rows(self) -> dict:
-        """Most recent observation per camera, from the collector's log."""
+    def _latest_rows(self, until: float | None = None) -> dict:
+        """Most recent observation per camera, from the collector's log.
+
+        Readings recorded after ``until`` are ignored: in replay, the future
+        of the recording has not happened yet.
+        """
         latest: dict = {}
         if not self.obs_path.exists():
             return latest
@@ -348,6 +398,8 @@ class LiveEngine:
                 cid = r.get("camera_id")
                 if cid not in self.by_id:
                     continue
+                if until is not None and r["t_wall"] > until:
+                    continue
                 prev = latest.get(cid)
                 if prev is None or r["t_wall"] > prev["t_wall"]:
                     latest[cid] = r
@@ -355,8 +407,8 @@ class LiveEngine:
 
     def refresh(self):
         """Rebuild the network belief from the freshest real observations."""
-        now = time.time()
-        rows = self._latest_rows()
+        now = self.now()
+        rows = self._latest_rows(until=now)
         self.latest_rows = rows        # raw readings, for the camera panel
 
         obs, ages = [], []
@@ -440,6 +492,7 @@ class LiveEngine:
                      "vehicle": user.vehicle},
             "data_age_s": round(self.data_age_s) if self.data_age_s else None,
             "cameras_reporting": len(self.observations),
+            "replay": self.replay_info(),
             "routes": route_dicts,
             "baseline": baseline.as_dict(self.net) if baseline else None,
         }
@@ -455,7 +508,7 @@ class LiveEngine:
         does for every step of every trip anyway.
         """
         user = self.profiles.get(user_id)
-        depart = time.time() if depart is None else float(depart)
+        depart = self.now() if depart is None else float(depart)
         prof = self.forecaster.build_profile(self.state, depart)
         user.adapt_profile(self.net, prof)
         router = Router(self.net, prof, prefs=user)
@@ -536,7 +589,7 @@ class LiveEngine:
         # each other's reading.
         obs_by_cam = {o.cam_id: o for o in self.observations}
         rows = getattr(self, "latest_rows", {}) or {}
-        now = time.time()
+        now = self.now()
         cams = [_camera_row(m, obs_by_cam.get(m.id), rows.get(m.id), now)
                 for m in self.mapped]
 
@@ -544,12 +597,16 @@ class LiveEngine:
             "city": net.meta.get("label", self.city),
             "center": net.meta.get("center"),
             "bbox": net.meta.get("bbox"),
-            "clock": time.strftime("%H:%M"),
+            # London's time, not this computer's: a laptop in Kolkata is
+            # 4.5 hours ahead of the traffic it is showing.
+            "clock": datetime.fromtimestamp(now, LONDON).strftime("%H:%M"),
             "ids": [int(e) for e in keep],
             "cong": [round(float(cong[e]), 3) for e in keep],
             "kph": [round(float(st.kph[e]), 1) for e in keep],
             "obs": [int(bool(st.observed[e])) for e in keep],
             "cams": cams,
+            "now_s": round(now),
+            "replay": self.replay_info(),
             "stats": self.stats(),
         }
 

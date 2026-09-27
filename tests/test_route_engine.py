@@ -134,6 +134,57 @@ def test_routes_are_plausible(eng):
         assert net.ev[a] == net.eu[b], "route is not a connected path"
 
 
+def test_traffic_levels_follow_the_dashboard_bands():
+    from route_engine.router import traffic_level
+    assert traffic_level(1.0) == 0          # free flow
+    assert traffic_level(0.70) == 1         # congestion 0.375: slowing
+    assert traffic_level(0.50) == 2         # congestion 0.625: congested
+    assert traffic_level(0.20) == 3         # congestion 1.0: near gridlock
+
+
+def test_routes_record_predicted_speed_per_edge(eng):
+    plan = eng.plan("Park Circus", "BBD Bagh", user_id="exec", k=3)
+    for r in plan.routes:
+        assert len(r.speed_ratio) == len(r.edges)
+        # Personal profiles cap speed at 105% of free flow.
+        assert all(0.0 < x <= 1.06 for x in r.speed_ratio)
+
+
+def test_route_traffic_runs_are_the_whole_route(eng):
+    """The coloured runs cover every edge, in order, end to end."""
+    plan = eng.plan("Park Circus", "BBD Bagh", user_id="exec", k=3)
+    for r in plan.routes:
+        d = r.as_dict(eng.net)
+        runs = d["traffic"]
+        assert runs, "every route should carry traffic runs"
+        assert sum(x["n"] for x in runs) == d["n_edges"]
+        assert all(x["level"] in (0, 1, 2, 3) for x in runs)
+        # Neighbouring runs differ, or they would have been merged.
+        assert all(a["level"] != b["level"] for a, b in zip(runs, runs[1:]))
+        assert list(runs[0]["g"][0]) == list(d["geometry"][0])
+        assert list(runs[-1]["g"][-1]) == list(d["geometry"][-1])
+
+
+def test_empty_settings_fall_back_to_the_defaults():
+    """A hosting panel that sets TRIFFY_CITY to \"\" must not break startup."""
+    import subprocess
+    env = dict(os.environ, TRIFFY_CITY="", TRIFFY_MAP_BASE="")
+    out = subprocess.run(
+        [sys.executable, "-c", "from route_engine import config as c; "
+         "print(c.ACTIVE_CITY, c.MAP_BASE)"],
+        env=env, capture_output=True, text=True,
+        cwd=os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    assert out.stdout.split() == ["kol", "http://127.0.0.1:8000"], out.stderr
+
+
+def test_saved_paths_are_relative_to_the_repo():
+    from route_engine.collector import OBS_PATH
+    from route_engine.config import repo_path
+    assert repo_path(OBS_PATH) == "data/live_observations.jsonl"
+    # Anything outside the repo is left as it is.
+    assert repo_path("/somewhere/else.json").endswith("else.json")
+
+
 def test_eta_distribution_is_ordered(eng):
     plan = eng.plan("Sealdah", "Victoria Memorial", user_id="rider")
     r = plan.best
@@ -1035,7 +1086,7 @@ def test_benchmark_sampling_is_reproducible_and_bounded(eng):
 
 
 def test_camera_measurement_on_a_real_clip(monkeypatch):
-    """YOLO11 + ByteTrack on a real 40-frame TfL clip, on the CPU (the GPU
+    """YOLO11 + tracking on a real 40-frame TfL clip, on the CPU (the GPU
     belongs to the collector)."""
     pytest.importorskip("ultralytics")
     from route_engine.livecams import LiveCameraReader, LiveCamera
@@ -2171,3 +2222,106 @@ def test_a_bare_yes_is_not_treated_as_a_failed_route(eng):
 
     # "thanks" must still close a conversation rather than being read as a yes.
     assert "any time" in brain.handle("thanks", "yes-user").lower()
+
+
+def test_live_engine_has_one_clock(london):
+    """Without replay, the live engine's clock is the real time."""
+    import time
+    assert abs(london.now() - time.time()) < 5
+
+
+def test_london_chat_follows_the_engine_clock(london, monkeypatch):
+    """The chat's 'now' must be the engine's, so both mean the same moment."""
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+    from route_engine.live_chat import LiveChatEngine
+    five_pm = datetime(2026, 9, 19, 17, 0, tzinfo=ZoneInfo("Europe/London")).timestamp()
+    monkeypatch.setattr(london, "now", lambda: five_pm)
+    assert LiveChatEngine(london).clock == "17:00"
+
+
+def test_replay_time_is_read_as_london_time():
+    from datetime import datetime, timezone
+    from route_engine.live_engine import parse_replay
+    # 17:30 in London on 25 Sep 2026 is 16:30 UTC (British Summer Time).
+    assert parse_replay("2026-09-25 17:30") == datetime(
+        2026, 9, 25, 16, 30, tzinfo=timezone.utc).timestamp()
+    assert parse_replay("") is None and parse_replay(None) is None
+    with pytest.raises(ValueError):
+        parse_replay("yesterday at five")
+
+
+@pytest.fixture(scope="module")
+def london_replay():
+    """London replaying a recorded moment from the data in the repo."""
+    from route_engine.live_engine import LiveEngine, parse_replay
+    return LiveEngine(city="lon", replay_at=parse_replay("2026-09-19 17:00"))
+
+
+def test_replay_uses_the_readings_of_that_moment(london_replay):
+    eng = london_replay
+    if not eng.observations:
+        pytest.skip("the recorded data does not cover the replay moment")
+    # Plenty of cameras are live at the replayed moment...
+    assert len(eng.observations) > 50
+    # ...and none of their readings comes from after it.
+    assert all(o.t_s <= eng.now() for o in eng.observations)
+    assert eng.data_age_s is not None and eng.data_age_s < 1500
+
+
+def test_replay_is_reported_to_the_ui(london, london_replay):
+    assert london.replay_info() is None
+    info = london_replay.replay_info()
+    assert info["from"] == "2026-09-19 17:00"
+    state = london_replay.live_state()
+    assert state["replay"]["from"] == "2026-09-19 17:00"
+    assert abs(state["now_s"] - london_replay.now()) < 60
+
+
+def test_replay_options_are_offered():
+    import subprocess
+    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    for module in ("route_engine.api", "route_engine.cli"):
+        out = subprocess.run([sys.executable, "-m", module, "--help"],
+                             capture_output=True, text=True, cwd=root)
+        assert "--replay" in out.stdout, (module, out.stderr[-300:])
+
+
+def test_landmarks_spelt_as_they_sound(eng):
+    """People type a place the way they say it."""
+    for typed in ("Parkk Sirkus", "park sirkus", "Parksircus"):
+        place, how = eng.net.match(typed)
+        assert place is not None and place.name == "Park Circus", typed
+        assert how == "typo", typed
+    # ...without inventing a match for places that are not on the map.
+    for typed in ("Mumbai", "London Bridge", "Nowhereville"):
+        place, how = eng.net.match(typed)
+        assert how != "typo", (typed, place)
+
+
+def test_directions_do_not_repeat_a_road_that_carries_on(eng):
+    """"Bear left onto Mayo Road" twice in a row is one instruction."""
+    for o, d in (("Park Circus", "Howrah Station"), ("Park Circus", "Sealdah")):
+        for r in eng.plan(o, d, user_id="exec", k=3).routes:
+            steps = r.steps[:-1]
+            for a, b in zip(steps, steps[1:]):
+                assert not (a.road == b.road
+                            and b.instruction.startswith(("Continue", "Bear"))), \
+                    (o, d, a.instruction, b.instruction)
+            # Merging moves distance between steps; it never loses any.
+            assert abs(sum(s.distance_m for s in r.steps) - r.distance_m) < 1.0
+
+
+def test_a_turn_that_keeps_the_road_says_so(eng):
+    """Not "Turn left onto Park Street" then "Turn right onto Park Street"."""
+    for o, d in (("Park Circus", "Park Street"), ("Park Circus", "Sealdah")):
+        for r in eng.plan(o, d, user_id="exec", k=3).routes:
+            steps = r.steps[:-1]
+            for a, b in zip(steps, steps[1:]):
+                if a.road == b.road:
+                    assert " to stay on " in b.instruction, (o, d, b.instruction)
+
+
+def test_live_clock_is_london_time(london_replay):
+    """A 17:00 replay says 17:00, whatever time zone the computer is in."""
+    assert london_replay.live_state()["clock"] in ("17:00", "17:01")
