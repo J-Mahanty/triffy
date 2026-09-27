@@ -684,45 +684,140 @@ body[data-mode="live"] .provenance svg {
   gap: 10px; 
 }
 
-/* After routing, the form folds into one editable line so the answer, the
-   alternatives and the baselineshot comparison all fit on the first screen. */
-.search.compact > :not(.od-summary):not(datalist) { display: none; }
-.od-summary {
-  display: flex; align-items: center; gap: 12px; width: 100%; text-align: left;
-  padding: 12px 14px; border: none; border-radius: var(--radius-card);
-  background: var(--surface-hover); cursor: pointer; transition: background-color .15s;
-}
-.od-summary:hover { background: var(--surface-sunken); }
-.od-sum-text { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; color: var(--text);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.od-sum-text small { display: block; font-size: 12px; font-weight: 500; color: var(--text-faint); margin-top: 1px; }
-.od-sum-edit { font-size: 13px; font-weight: 600; color: var(--blue); }
+/* Fitting into one screen*/
 
-#go { margin-top: 16px; }
+.search.compact > :not(.od-summary):not(datalist) { 
+  display: none; 
+}
+
+.od-summary {
+  display: flex; 
+  align-items: center; 
+  gap: 12px; 
+  width: 100%; 
+  text-align: left;
+  padding: 12px 14px; border: none; 
+  border-radius: var(--radius-card);
+  background: var(--surface-hover); 
+  cursor: pointer; transition: background-color .15s;
+}
+
+.od-summary:hover { 
+  background: var(--surface-sunken); 
+}
+
+.od-sum-text { 
+  flex: 1; 
+  min-width: 0; 
+  font-size: 14px; 
+  font-weight: 600; 
+  color: var(--text);
+  white-space: nowrap; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+}
+
+.od-sum-text small { 
+  display: block; 
+  font-size: 12px; 
+  font-weight: 500; 
+  color: var(--text-faint); 
+  margin-top: 1px; 
+}
+
+.od-sum-edit { 
+  font-size: 13px; 
+  font-weight: 600; 
+  color: var(--blue);
+}
+
+#go { 
+  margin-top: 16px; 
+}
 
 /* ---------- advisory ---------- */
 
 .advisory {
-  display: flex; gap: 10px; margin-top: 14px; padding: 10px 14px; border-radius: var(--radius-card);
-  background: var(--blue-soft); color: #173b8f; font-size: 13.5px; line-height: 1.45;
+  display: flex; 
+  gap: 10px; 
+  margin-top: 14px; 
+  padding: 10px 14px; 
+  border-radius: var(--radius-card);
+  background: var(--blue-soft); 
+  color: #173b8f; 
+  font-size: 13.5px; 
+  line-height: 1.45;
   animation: rise .22s var(--ease);
 }
-.advisory b { font-weight: 600; }
+
+.advisory b { 
+  font-weight: 600; 
+}
 
 /* ---------- results ---------- */
 
-.results { margin-top: 14px; }
-.results .hint { margin-top: 0; }
+.results { 
+  margin-top: 14px; 
+}
 
-/* The answer, Uber-style: one number you can read from across a table. */
-.answer { padding: 2px 2px 14px; border-bottom: 1px solid var(--line); animation: rise .24s var(--ease); }
-.answer-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
-.answer-min { font-size: 46px; line-height: 1; font-weight: 700; letter-spacing: -.035em; }
-.answer-min small { font-size: 20px; font-weight: 600; letter-spacing: -.01em; margin-left: 4px; color: var(--text-muted); }
-.answer-arrive { text-align: right; font-size: 13px; color: var(--text-muted); }
-.answer-arrive b { display: block; font-size: 20px; font-weight: 650; color: var(--text); letter-spacing: -.01em; }
-.answer-meta { margin-top: 8px; font-size: 13px; color: var(--text-muted); }
-.answer-meta .dot { margin: 0 6px; color: var(--line-strong); }
+.results .hint { 
+  margin-top: 0; 
+}
+
+/* The answer*/
+
+.answer { 
+  padding: 2px 2px 14px; 
+  border-bottom: 1px solid var(--line); 
+  animation: rise .24s var(--ease); 
+}
+
+.answer-top { 
+  display: flex; 
+  align-items: baseline; 
+  justify-content: space-between; 
+  gap: 12px; 
+}
+
+.answer-min { 
+  font-size: 46px; 
+  line-height: 1; 
+  font-weight: 700; 
+  letter-spacing: -.035em; 
+}
+
+.answer-min small { 
+  font-size: 20px; 
+  font-weight: 600; 
+  letter-spacing: -.01em; 
+  margin-left: 4px; 
+  color: var(--text-muted); 
+}
+
+.answer-arrive { 
+  text-align: right; 
+  font-size: 13px; 
+  color: var(--text-muted); 
+}
+
+.answer-arrive b { 
+  display: block; 
+  font-size: 20px; 
+  font-weight: 650; 
+  color: var(--text); 
+  letter-spacing: -.01em; 
+}
+
+.answer-meta { 
+  margin-top: 8px; 
+  font-size: 13px; 
+  color: var(--text-muted); 
+}
+
+.answer-meta .dot { 
+  margin: 0 6px; 
+  color: var(--line-strong); 
+}
 
 /* Range bar: p10 to p90 with the median marked. A single ETA hides the tail. */
 .range { margin-top: 14px; }
