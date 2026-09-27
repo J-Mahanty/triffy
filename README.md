@@ -24,6 +24,10 @@ Team Veridien G1T2 · theme CIT-01, *Analysis of traffic flow and best route pre
 - **Three ways in:** a website (laptop and phone), a Discord bot, and a
   terminal chat.
 
+**How it works, in diagrams:** [docs/architecture.md](docs/architecture.md):
+the system, the camera-to-route pipeline, one request, the server deployment,
+and a map of the code.
+
 ## Run it on your computer
 
 You need **Python 3.10 to 3.13** ([python.org](https://www.python.org/downloads/);
@@ -215,7 +219,7 @@ The vision tests are skipped unless the vision packages are installed.
 | `web/` | The website (served by `route_engine/api.py`) |
 | `discordBot/` | The Discord bot |
 | `data/` | Road networks, landmarks, and the recorded camera readings; see [README_ankan.md](README_ankan.md) |
-| `docs/` | Starting Triffy and choosing cameras; replaying recorded traffic |
+| `docs/` | How it works (diagrams); starting Triffy and choosing cameras; replaying recorded traffic |
 | `tests/` | Automated tests |
 | `start.py`, `start.bat`, `start.command` | The launcher |
 
