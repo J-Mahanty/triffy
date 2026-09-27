@@ -33,6 +33,7 @@
     <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
     <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
     <symbol id="i-mark" viewBox="0 0 24 24"><path d="M6.5 17.5c0-3.5 2.5-4.5 5.5-5.5s5.5-2 5.5-5.5"/><circle cx="6.5" cy="17.5" r="2.2" fill="currentColor" stroke="none"/><circle cx="17.5" cy="6.5" r="2.2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5.5h16v10H9l-4 4v-4H4z"/></symbol>
   </defs>
 </svg>
 
@@ -100,6 +101,10 @@
 
 <!-- Status: the time and how traffic looks right now. -->
 <div class="status" aria-label="Traffic now">
+  <a class="chip chip-link" id="discordChip" href="https://discord.gg/rEpvnmGtRV" target="_blank" rel="noopener noreferrer" aria-label="Chat with the Triffy bot on Discord">
+    <svg><use href="#i-chat"/></svg>
+    <span>Talk to the bot</span>
+  </a>
   <div class="chip clockchip">
     <svg><use href="#i-clock"/></svg>
     <span class="clocklabel" id="clockLabel">Time</span>
@@ -127,10 +132,7 @@
   </section>
 </aside>
 
-<!-- Mascot buddy: the full-body robot sits at the bottom of the screen and
-     hands out a quick tip in a speech bubble whenever it's tapped. Purely a
-     friendly gimmick - it never blocks the map or the plan sheet, and it
-     stays out of the way of the traffic data itself. -->
+<!-- Mascot buddy  -->
 <div class="mascot" id="mascot">
   <div class="mascot-bubble" id="mascotBubble" role="status" aria-live="polite" hidden>
     <p id="mascotText"></p>
