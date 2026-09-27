@@ -36,22 +36,33 @@ async def on_ready():
     except Exception as e:
         print(f"An error occurred: {e}")
 
-    try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(f"{MAP_BASE}/api/state",
-                                    timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                resp.raise_for_status()
+    engine_up = False
+    last_error = None
+    for attempt in range(5):
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(f"{MAP_BASE}/api/state",
+                                        timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                    resp.raise_for_status()
+            engine_up = True
+            break
+        except Exception as e:
+            last_error = e
+            if attempt < 4:
+                await asyncio.sleep(4)
+ 
+    if engine_up:
         print(f"Connected to the Triffy engine at {MAP_BASE}")
         try:
             channel = await client.fetch_channel(channel_id)
             await channel.send(f"Connected to the Triffy engine at {MAP_BASE}")
         except Exception:
             pass
-    except Exception as e:
-        print(f"Could not reach the Triffy engine at {MAP_BASE}: {e}")
+    else:
+        print(f"Could not reach the Triffy engine at {MAP_BASE}: {last_error}")
         try:
             channel = await client.fetch_channel(channel_id)
-            await channel.send(f"Could not reach the Triffy engine at {MAP_BASE}: `{e}`")
+            await channel.send(f"Could not reach the Triffy engine at {MAP_BASE}: `{last_error}`")
         except Exception:
             pass
 
