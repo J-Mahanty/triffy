@@ -136,40 +136,42 @@ async def route(ctx):
             await ctx.send(f"Could not reach the Triffy engine: {e}")
             return
  
-        r = plan.best
-        mean_min = round(r.mean_s / 60)
-        p90_min = round(r.p90_s / 60)
-        reliability_pct = round(r.reliability * 100)
-        arrive_clock = fmt_clock(r.arrival_s)
+        r = plan["routes"][0]
+        mean_min = round(r["mean_s"] / 60)
+        p90_min = round(r["p90_s"] / 60)
+        reliability_pct = round(r["reliability"] * 100)
+        arrive_clock = fmt_clock(r["depart_s"] + r["mean_s"])
  
         lines = [
-            f"**{plan.origin} → {plan.destination}**",
-            f"Depart at **{engine.clock}**",
+            f"**{plan['origin']} → {plan['destination']}**",
+            f"Depart at **{plan['depart_clock']}**",
             "",
-            f"**Best route:** {r.label}",
+            f"**Best route:** {r['label']}",
             f"Estimated time: **{mean_min} min** (worst-case p90: {p90_min} min)",
             f"Reliability: {reliability_pct}%",
             f"Arrives around: **{arrive_clock}**",
         ]
  
-        if plan.advisory:
-            lines += ["", f"_{plan.advisory}_"]
+        if plan.get("advisory"):
+            lines += ["", f"_{plan['advisory']}_"]
  
-        if r.steps:
+        if r["steps"]:
             lines += ["", "**Turn-by-turn:**"]
             lines += [
-                f"{i}. {s.instruction} ({round(s.distance_m)} m)"
-                for i, s in enumerate(r.steps, start=1)
+                f"{i}. {s['instruction']} ({s['distance_m']} m)"
+                for i, s in enumerate(r["steps"], start=1)
             ]
  
-        if len(plan.routes) > 1:
-            alt_lines = []
-            for alt in plan.routes[1:]:
-                alt_lines.append(f"• {alt.label} — {round(alt.mean_s / 60)} min")
+        if len(plan["routes"]) > 1:
+            alt_lines = [
+                f"• {alt['label']} — {round(alt['mean_s'] / 60)} min"
+                for alt in plan["routes"][1:]
+            ]
             lines += ["", "**Alternatives:**"] + alt_lines
  
         if MAP_BASE:
-            lines += ["", f"View on map: {MAP_BASE}"]
+            link = f"{MAP_BASE}/?from={quote(origin)}&to={quote(destination)}"
+            lines += ["", f"See it on the map: {link}"]
  
         await _send_long(ctx, "\n".join(lines))
  
