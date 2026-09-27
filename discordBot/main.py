@@ -1,17 +1,16 @@
 from pathlib import Path
 from discord.ext import commands 
 from dotenv import load_dotenv
-from datetime import datetime 
-from zoneinfo import ZoneInfo
+from urllib.parse import quote
 
 import discord
 import os
 import sys
 import asyncio
+import aiohttp
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from route_engine.engine import TriffyEngine
 from route_engine.simulator import fmt_clock
 from route_engine.config import MAP_BASE
 
@@ -21,13 +20,11 @@ server_bot_token = os.getenv('SERVER_BOT_TOKEN')
 channel_id = int (os.getenv('CHANNEL_ID'))
 
 client = commands.Bot(command_prefix= '!', intents=discord.Intents.all())
-engine: TriffyEngine | None = None
 
 
 @client.event
 # On the bot's Startup 
 async def on_ready(): 
-    global engine
     print("Triffy is now online")
     try:
         channel = await client.fetch_channel(channel_id)
@@ -39,25 +36,24 @@ async def on_ready():
     except Exception as e:
         print(f"An error occurred: {e}")
 
-    if engine is None:
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(f"{MAP_BASE}/api/state",
+                                    timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                resp.raise_for_status()
+        print(f"Connected to the Triffy engine at {MAP_BASE}")
         try:
-            engine = await asyncio.to_thread(
-                TriffyEngine,
-                start_clock=datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M"),
-            )
-            print(f"Engine ready — {engine.city} @ {engine.clock}")
-            try:
-                channel = await client.fetch_channel(channel_id)
-                await channel.send(f"Engine ready — {engine.city} @ {engine.clock}")
-            except Exception:
-                pass
-        except Exception as e:
-            print(f"Engine failed to load: {e}")
-            try:
-                channel = await client.fetch_channel(channel_id)
-                await channel.send(f"Engine failed to load: `{e}`")
-            except Exception:
-                pass
+            channel = await client.fetch_channel(channel_id)
+            await channel.send(f"Connected to the Triffy engine at {MAP_BASE}")
+        except Exception:
+            pass
+    except Exception as e:
+        print(f"Could not reach the Triffy engine at {MAP_BASE}: {e}")
+        try:
+            channel = await client.fetch_channel(channel_id)
+            await channel.send(f"Could not reach the Triffy engine at {MAP_BASE}: `{e}`")
+        except Exception:
+            pass
 
 
 @client.event
@@ -101,12 +97,6 @@ async def _send_long(ctx, text, limit=1900):
 @client.command(help="Start a new trip")
 # Information about the Origin, Destination and Time of travel. 
 async def route(ctx):
-    global engine
- 
-    if engine is None:
-        await ctx.send("Engine is still loading, please try again in a moment.")
-        return
- 
     await ctx.send("Current Location?")
  
     def check(message):
@@ -126,14 +116,24 @@ async def route(ctx):
  
         await ctx.send("Planning your route…")
  
-        await asyncio.to_thread(
-            engine.set_clock, datetime.now(ZoneInfo("Asia/Kolkata")).strftime("%H:%M")
-        )
- 
         try:
-            plan = await asyncio.to_thread(engine.plan, origin, destination)
-        except ValueError as e:
-            await ctx.send(f"Could not plan that route: {e}")
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{MAP_BASE}/api/plan",
+                    json={"origin": origin, "destination": destination},
+                    timeout=aiohttp.ClientTimeout(total=15),
+                ) as resp:
+                    if resp.status == 400:
+                        body = await resp.json()
+                        await ctx.send(f"Could not plan that route: {body.get('detail', 'unknown error')}")
+                        return
+                    resp.raise_for_status()
+                    plan = await resp.json()
+        except asyncio.TimeoutError:
+            await ctx.send("The Triffy engine took too long to respond.")
+            return
+        except aiohttp.ClientError as e:
+            await ctx.send(f"Could not reach the Triffy engine: {e}")
             return
  
         r = plan.best
