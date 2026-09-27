@@ -167,7 +167,8 @@ All optional, set as environment variables:
 
 ## Run it on a server (Docker)
 
-`docker-compose.yml` runs the website, the Discord bot and Redis:
+`docker-compose.yml` runs the website, the Discord bot, Redis, and **two live
+London collectors** that read all 172 mapped cameras between them:
 
 ```
 docker compose up -d --build
@@ -176,9 +177,15 @@ docker compose up -d --build
 Put the secrets and settings in a `.env` file next to it (`SERVER_BOT_TOKEN`,
 `CHANNEL_ID`, `APP_PORT`, and any of the settings above; see
 [CONTRIBUTING.md](CONTRIBUTING.md)). The website is served on `APP_PORT`
-(default `42069`). For a public site, set `TRIFFY_READONLY=1`. The compose file
-does not run a collector, so London shows live data only with `TRIFFY_REPLAY`
-set, or with a collector writing to the same `data/` folder.
+(default `42069`), read-only unless `TRIFFY_READONLY=0`.
+
+The collectors run YOLO11 on the CPU (their own image, `Dockerfile.collector`)
+and share a `triffy-data` volume with the website. All 172 cameras keep about
+16 cores busy; on a smaller server, lower `COLLECTOR_A_CAMERAS` (default 92)
+and `COLLECTOR_B_CAMERAS` (default 80), and `COLLECTOR_THREADS` (default 10 per
+collector). Live readings appear within a few minutes of starting. The
+[Server stack](.github/workflows/server-stack.yml) check builds and runs this
+same setup on GitHub and waits for live London before passing.
 
 ## Tests
 

@@ -493,6 +493,8 @@ only reads.
 
 # Endpoints that change state everyone shares, or write to disk.
 WRITES_SHARED_STATE = ("/api/clock", "/api/incident", "/api/feedback")
+# Endpoints that run computer vision on request (a camera's still or clip).
+VISION_ON_DEMAND = "/api/livecam/"
 
 
 @app.middleware("http")
@@ -509,6 +511,14 @@ async def _guard_readonly(request, call_next):
             content={"detail": "Viewer mode: the demo clock, incidents and "
                                "feedback are controlled from the presenter's "
                                "machine. Routing and the live data are open."})
+    # Each call here runs YOLO on the host's own machine, and the site no longer
+    # shows camera video, so viewers of a public site do not get to start it.
+    if READONLY and request.url.path.startswith(VISION_ON_DEMAND):
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Viewer mode: camera analysis runs only in the "
+                               "host's collectors. Routing and the live data "
+                               "are open."})
     return await call_next(request)
 
 
