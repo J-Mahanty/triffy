@@ -31,19 +31,36 @@ jobs:
         run: docker compose build web collector-a collector-b
 
       - name: Start them
-        run: docker compose up -d web collector-a collector-b
+        run: |
+          echo "STARTED=$(date +%s)" >> "$GITHUB_ENV"
+          docker compose up -d web collector-a collector-b
 
-      - name: Wait for live London
+      # Readings in the repo's recorded data can be recent enough to count as
+      # live, so "cameras reporting" alone proves nothing about the collectors.
+      # Count readings written after the stack started, as the website's own
+      # container sees the shared file: collector -> volume -> website.
+      - name: Wait for the collectors' readings to reach the website
         run: |
           for i in $(seq 1 60); do
-            n=$(curl -s --max-time 60 http://localhost:42069/api/live/state \
-                | python3 -c "import sys, json; print(json.load(sys.stdin)['stats']['cameras_reporting'] or 0)" \
-                2>/dev/null || echo 0)
-            echo "check $i: $n cameras reporting"
+            n=$(docker compose exec -T web python -c "
+          import json
+          n = 0
+          for line in open('/app/data/live_observations.jsonl', encoding='utf-8'):
+              try:
+                  n += json.loads(line)['t_wall'] > $STARTED
+              except Exception:
+                  pass
+          print(n)" 2>/dev/null || echo 0)
+            echo "check $i: $n new readings visible to the website"
             if [ "$n" -gt 0 ]; then exit 0; fi
             sleep 20
           done
-          echo "no live readings after 20 minutes"; exit 1
+          echo "no new readings after 20 minutes"; exit 1
+
+      - name: Live London is served
+        run: |
+          curl -s --max-time 60 http://localhost:42069/api/live/state \
+            | python3 -c "import sys, json; s = json.load(sys.stdin)['stats']; print(s['cameras_reporting'], 'cameras reporting; newest reading', s['data_age_s'], 's old')"
 
       - name: Plan a live route
         run: |
